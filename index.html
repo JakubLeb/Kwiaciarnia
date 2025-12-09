@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kreator Bukietów 3D</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+<div id="container">
+    <div id="sidebar">
+        <h1>Kreator Bukietów</h1>
+
+        <div class="counter-section">
+            <div class="counter-header">
+                <h2>Kwiaty w bukiecie</h2>
+                <span class="counter-badge" id="flower-counter">0 / 27</span>
+            </div>
+            <div class="available-text" id="available-text">Dostępne miejsca: 27</div>
+        </div>
+
+        <div class="section">
+            <h3>Wybierz kwiat</h3>
+            <div id="flowers-list"></div>
+        </div>
+
+
+        <div class="section">
+            <button class="action-button btn-remove" id="btn-remove" disabled>
+                Usuń ostatni kwiat
+            </button>
+            <button class="action-button btn-clear" id="btn-clear" disabled>
+                Wyczyść bukiet
+            </button>
+        </div>
+
+        <div class="controls-overlay">
+            <p class="controls-title">Sterowanie 3D</p>
+            <p class="control-item">Kliknij i przeciągnij 🖱️: Obrót kamery</p>
+            <p class="control-item">Scroll (kółko) 🔍 : Zoom (oddal/przybliż)</p>
+            <p class="control-item">Kliknij kwiat 🌸: Edytuj kwiat</p>
+        </div>
+    </div>
+
+    <!-- Edytor kwiatu (sidebar po prawej) -->
+    <div id="flower-editor" style="display: none;">
+        <div class="editor-header">
+            <h2>Edytor kwiatu</h2>
+            <button id="close-editor" class="close-btn">✕</button>
+        </div>
+
+        <div class="editor-content">
+            <div class="editor-section">
+                <button id="delete-flower" class="delete-flower-btn">
+                    🗑️ Usuń kwiat
+                </button>
+            </div>
+
+            <div class="editor-section">
+                <h3>Zamień na:</h3>
+                <div id="flower-replace-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
