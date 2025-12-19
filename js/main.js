@@ -6,8 +6,8 @@ import { BOUQUET_RINGS_CONFIG, INCLUDE_CENTER_FLOWER } from './config.js';
 import { initScene, startAnimation} from './scene.js';
 import { setupCameraControls } from './camera.js';
 import { generateFlowerPositions, initFlowers,loadBouquetFromUrl } from './flowers.js';
-import { initUI, updateUI } from './ui.js';
-import { initFlowerEditor } from './Raycaster.js';
+import { initUI, updateUI,initFlowerEditor } from './ui.js';
+
 
 /**
  * Inicjalizacja aplikacji

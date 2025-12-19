@@ -15,7 +15,14 @@ import {
     deleteFlower,
     getBouquetUrl
 } from './flowers.js';
-import { getSelectedFlower, clearSelection, updateSelectionAfterReplace } from './Raycaster.js';
+import {
+    getSelectedFlower,
+    setNullSelectedFlower,
+    updateSelectionAfterReplace,
+    onMouseDown,
+    unhighlightFlower,
+    hideFlowerEditor
+} from './Raycaster.js';
 
 let scene;
 let onFlowerChangeCallback = null;
@@ -28,7 +35,6 @@ export function initUI(sceneObj, onFlowerChange) {
     onFlowerChangeCallback = onFlowerChange;
 
     createFlowersList();
-    createFlowerEditorList();
     setupActionButtons();
     setupDeleteCallback();
     updateUI();
@@ -101,7 +107,35 @@ function createFlowersList() {
 /**
  * Tworzy listę kwiatów w edytorze
  */
-function createFlowerEditorList() {
+export function initFlowerEditor() {
+
+    document.addEventListener('mousedown', onMouseDown);
+
+    const closeBtn = document.getElementById('close-editor');
+    closeBtn.addEventListener('click', () => {
+        if (getSelectedFlower()) {
+            unhighlightFlower(getSelectedFlower());
+            setNullSelectedFlower()
+        }
+        hideFlowerEditor();
+    });
+
+    const deleteBtn = document.getElementById('delete-flower');
+    deleteBtn.addEventListener('click', (event) => {
+        event.stopPropagation(); // Zapobiega propagacji eventu
+        if (getSelectedFlower()) {
+            console.log('Usuwanie kwiatu:', getSelectedFlower());
+            // Wywołaj funkcję usuwania kwiatu
+            if (window.deleteSelectedFlowerCallback) {
+                window.deleteSelectedFlowerCallback(getSelectedFlower());
+            }
+            setNullSelectedFlower()
+            hideFlowerEditor();
+        } else {
+            console.log('Brak wybranego kwiatu do usunięcia');
+        }
+    });
+
     const editorList = document.getElementById('flower-replace-list');
 
     flowerTypes.forEach(flower => {
