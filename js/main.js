@@ -5,14 +5,14 @@
 import { BOUQUET_RINGS_CONFIG, INCLUDE_CENTER_FLOWER } from './config.js';
 import { initScene, startAnimation} from './scene.js';
 import { setupCameraControls } from './camera.js';
-import { generateFlowerPositions, initFlowers } from './flowers.js';
-import { initUI, updateUI } from './ui.js';
-import { initFlowerEditor } from './Raycaster.js';
+import { generateFlowerPositions, initFlowers,loadBouquetFromUrl } from './flowers.js';
+import { initUI, updateUI,initFlowerEditor } from './ui.js';
+
 
 /**
  * Inicjalizacja aplikacji
  */
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
     // 1. Generowanie pozycji kwiatów
     const positions = generateFlowerPositions(BOUQUET_RINGS_CONFIG, INCLUDE_CENTER_FLOWER);
     console.log(`Wygenerowano ${positions.length} pozycji dla kwiatów`);
@@ -21,7 +21,7 @@ window.addEventListener('DOMContentLoaded', () => {
     initFlowers(positions);
 
     // 3. Inicjalizacja sceny 3D
-    const { scene, camera, renderer } = initScene('canvas-container');
+    const {scene, camera, renderer} = initScene('canvas-container');
     console.log('Scena 3D zainicjalizowana');
 
     // 4. Konfiguracja kontrolek kamery
@@ -38,6 +38,8 @@ window.addEventListener('DOMContentLoaded', () => {
     // 6. Inicjalizacja edytora kwiatów (raycaster)
     initFlowerEditor();
     console.log('Edytor kwiatów zainicjalizowany');
+
+    await loadBouquetFromUrl(scene);
 
     // 7. Start animacji
     startAnimation();

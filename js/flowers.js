@@ -1,7 +1,7 @@
 // ============================================
 // ZARZĄDZANIE KWIATAMI
 // ============================================
-
+import { flowerTypes } from './config.js';
 import { getModelFromCache } from './modelLoader.js';
 
 let flowers = [];
@@ -290,6 +290,69 @@ export async function generateFullBouquet(flowerType, scene) {
     }
 
     console.log("Bukiet pomyślnie wygenerowany.");
+}
+/**
+ * Generuje SKOMPRESOWANY URL z zakodowanym stanem bukietu
+ */
+export function getBouquetUrl() {
+    if (flowers.length === 0) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('b');
+        return url.toString();
+    }
+
+    // KOMPRESJA: Zapisujemy tylko [pozycja, indeks_typu_kwiatu]
+    // Zamiast długich nazw, używamy liczb. Np: [5, 0] zamiast {p:5, i:'rose'}
+    const bouquetData = flowers.map(f => {
+        const typeIndex = flowerTypes.findIndex(t => t.id === f.mesh.userData.flowerType.id);
+        return [f.positionIndex, typeIndex];
+    });
+
+    const jsonString = JSON.stringify(bouquetData);
+    const encodedData = btoa(jsonString);
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('b', encodedData);
+
+    return url.toString();
+}
+
+
+export async function loadBouquetFromUrl(scene) {
+    const params = new URLSearchParams(window.location.search);
+    const encodedData = params.get('b');
+
+    if (!encodedData) return;
+
+    try {
+        console.log("Wczytywanie bukietu z linku...");
+        const jsonString = atob(encodedData);
+        const bouquetData = JSON.parse(jsonString);
+
+        clearAllFlowers(scene);
+
+        for (const item of bouquetData) {
+            // item to teraz tablica: [pozycja, indeks_typu]
+            const positionIndex = item[0];
+            const typeIndex = item[1];
+
+            // Pobieramy typ kwiatu z listy na podstawie numeru
+            const type = flowerTypes[typeIndex];
+
+            if (type) {
+                const flower = await createFlowerFromGLB(type, positionIndex);
+                scene.add(flower);
+                flowers.push({ mesh: flower, positionIndex: positionIndex });
+                // Aktualizacja dostępnych pozycji
+                availablePositions = availablePositions.filter(pos => pos !== positionIndex);
+            }
+        }
+
+        console.log("Wczytano bukiet z URL.");
+
+    } catch (error) {
+        console.error("Błąd podczas wczytywania bukietu z URL:", error);
+    }
 }
 
 /**

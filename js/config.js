@@ -3,10 +3,13 @@
 // ============================================
 
 export const flowerTypes = [
-    { id: 'rose', name: 'Róża', modelUrl: "models/rose.glb", color: 0xff0000 },
-    { id: 'gozdzik', name: 'Goździk', modelUrl: "models/gozdzik.glb", color: 0xffc0cb },
-    { id: 'lily', name: 'Lilia', modelUrl: "models/lilia.glb", color: 0xffffff },
-    { id: 'eustoma', name: 'Eustoma', modelUrl: "models/eustoma.glb", color: 0x800080 },
+    { id: 'rose', name: 'Róża', modelUrl: "models/rose.glb", color: 0xDC143C },
+    { id: 'gozdzik', name: 'Goździk', modelUrl: "models/gozdzik.glb", color: 0xFFA6C9 },
+    { id: 'lily', name: 'Lilia', modelUrl: "models/lilia.glb", color: 0xFFFFFF },
+    { id: 'eustoma', name: 'Eustoma', modelUrl: "models/eustoma.glb", color: 0x7851A9 },
+    { id: 'irys', name: 'Irys', modelUrl: "models/Irys.glb", color: 0x5D3FD3 },
+    { id: 'Gerbera', name: 'Gerbera', modelUrl: "models/Gerbera.glb", color: 0xFF1493 },
+    { id: 'Chryzantema', name: 'Chryzantema', modelUrl: "models/Chryzantema.glb", color: 0xFDFDD0 },
 ];
 
 export const BOUQUET_RINGS_CONFIG = [

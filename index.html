@@ -6,7 +6,8 @@
     <title>Kreator Bukietów 3D</title>
 
     <link rel="stylesheet" href="style.css">
-
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
@@ -35,7 +36,11 @@
             <button class="action-button btn-clear" id="btn-clear" disabled>
                 Wyczyść bukiet
             </button>
+            <button class="action-button btn-qr" id="btn-qr">
+                📱 Generuj kod QR
+            </button>
         </div>
+
 
         <div class="controls-overlay">
             <p class="controls-title">Sterowanie 3D</p>
@@ -58,6 +63,12 @@
                     🗑️ Usuń kwiat
                 </button>
             </div>
+            <div class="editor-section">
+                <div class="slidecontainer">
+                    <input type="range" min="-3" max="3" value="0" class="slider" id="slide">
+                </div>
+            </div>
+
 
             <div class="editor-section">
                 <h3>Zamień na:</h3>
@@ -68,7 +79,17 @@
 
     <div id="canvas-container"></div>
 </div>
-
+<div id="qr-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Twój Bukiet 💐</h3>
+        <div id="qr-code-container"></div>
+        <p id="qr-text-summary" style="margin-top: 15px; font-size: 14px;"></p>
+        <button id="close-qr" class="action-button" style="margin-top: 20px; background: #6b7280; color: white;">Zamknij</button>
+    </div>
+</div>
 <script type="module" src="js/main.js"></script>
+
+
 </body>
+
 </html>

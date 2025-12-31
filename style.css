@@ -766,3 +766,55 @@ h1 {
     margin-bottom: 15px;
     margin-top: 0;
 }
+/* --- Style dla Modala QR i przycisku --- */
+
+.btn-qr {
+    background: #10b981; /* Zielony kolor */
+    color: white;
+}
+
+.btn-qr:hover:not(:disabled) {
+    background: #059669;
+}
+
+.modal-overlay {
+    display: none; /* Domyślnie ukryty */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000; /* Powyżej wszystkiego */
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    max-width: 90%;
+    width: 320px;
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#qr-code-container {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+#qr-code-container img {
+    border: 8px solid white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-radius: 8px;
+}
+
+@keyframes popIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+}

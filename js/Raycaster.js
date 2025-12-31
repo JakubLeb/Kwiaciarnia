@@ -63,7 +63,7 @@ function restoreOriginalMaterials(object) {
 /**
  * Podświetla wybrany kwiat
  */
-function highlightFlower(flower) {
+export function highlightFlower(flower) {
     if (!originalMaterials.has(flower)) {
         originalMaterials.set(flower, saveOriginalMaterials(flower));
     }
@@ -86,14 +86,14 @@ function highlightFlower(flower) {
 /**
  * Usuwa podświetlenie kwiatu
  */
-function unhighlightFlower(flower) {
+export function unhighlightFlower(flower) {
     restoreOriginalMaterials(flower);
 }
 
 /**
  * Pokazuje edytor kwiatu
  */
-function showFlowerEditor() {
+export function showFlowerEditor() {
     const editor = document.getElementById('flower-editor');
     editor.style.display = 'block';
 }
@@ -101,41 +101,9 @@ function showFlowerEditor() {
 /**
  * Ukrywa edytor kwiatu
  */
-function hideFlowerEditor() {
+export function hideFlowerEditor() {
     const editor = document.getElementById('flower-editor');
     editor.style.display = 'none';
-}
-
-/**
- * Inicjalizuje edytor kwiatu
- */
-export function initFlowerEditor() {
-    document.addEventListener('mousedown', onMouseDown);
-
-    const closeBtn = document.getElementById('close-editor');
-    closeBtn.addEventListener('click', () => {
-        if (selectedFlower) {
-            unhighlightFlower(selectedFlower);
-            selectedFlower = null;
-        }
-        hideFlowerEditor();
-    });
-
-    const deleteBtn = document.getElementById('delete-flower');
-    deleteBtn.addEventListener('click', (event) => {
-        event.stopPropagation(); // Zapobiega propagacji eventu
-        if (selectedFlower) {
-            console.log('Usuwanie kwiatu:', selectedFlower);
-            // Wywołaj funkcję usuwania kwiatu
-            if (window.deleteSelectedFlowerCallback) {
-                window.deleteSelectedFlowerCallback(selectedFlower);
-            }
-            selectedFlower = null;
-            hideFlowerEditor();
-        } else {
-            console.log('Brak wybranego kwiatu do usunięcia');
-        }
-    });
 }
 
 /**
@@ -180,7 +148,7 @@ function isFlower(object) {
 /**
  * Obsługa kliknięcia myszy
  */
-function onMouseDown(event) {
+export function onMouseDown(event) {
     // Ignoruj kliknięcia w sidebar i edytorze
     if (event.target.closest('#sidebar') || event.target.closest('#flower-editor')) return;
 
@@ -244,6 +212,11 @@ export function updateSelectionAfterReplace(newFlowerMesh) {
 export function getSelectedFlower() {
     return selectedFlower;
 }
+export function setNullSelectedFlower() {
+    selectedFlower = null;
+
+}
+
 
 /**
  * Czyści zaznaczenie
