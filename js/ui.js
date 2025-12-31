@@ -135,7 +135,15 @@ export function initFlowerEditor() {
             console.log('Brak wybranego kwiatu do usunięcia');
         }
     });
+    if (getSelectedFlower()!=null) {
+        const slider = document.getElementById('slide');
+        output.innerHTML = getSelectedFlower().position.y;
 
+        slider.oninput = function () {
+            output.innerHTML = this.value;
+            getSelectedFlower().position.y = this.value;
+        }
+    }
     const editorList = document.getElementById('flower-replace-list');
 
     flowerTypes.forEach(flower => {
