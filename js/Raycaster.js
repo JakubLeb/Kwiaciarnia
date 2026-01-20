@@ -191,6 +191,11 @@ export function onMouseDown(event) {
         highlightFlower(selectedFlower);
         showFlowerEditor();
 
+        // [DODANO] Powiadom UI o wybraniu kwiatu
+        if (window.onFlowerSelected) {
+            window.onFlowerSelected(selectedFlower);
+        }
+
         console.log('Wybrany kwiat:', selectedFlower);
     }
 }
@@ -204,6 +209,11 @@ export function updateSelectionAfterReplace(newFlowerMesh) {
     }
     selectedFlower = newFlowerMesh;
     highlightFlower(selectedFlower);
+
+    // [DODANO] Aktualizuj UI po zamianie
+    if (window.onFlowerSelected) {
+        window.onFlowerSelected(selectedFlower);
+    }
 }
 
 /**
