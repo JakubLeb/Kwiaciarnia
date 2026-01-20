@@ -50,7 +50,6 @@
         </div>
     </div>
 
-    <!-- Edytor kwiatu (sidebar po prawej) -->
     <div id="flower-editor" style="display: none;">
         <div class="editor-header">
             <h2>Edytor kwiatu</h2>
@@ -63,13 +62,32 @@
                     🗑️ Usuń kwiat
                 </button>
             </div>
-            <div class="editor-section">
-                <div class="slidecontainer">
-                    <input type="range" min="-3" max="3" value="0" class="slider" id="slide">
+
+            <div class="editor-section controls-grid">
+                <h4>Pozycja</h4>
+                <div class="control-group">
+                    <label>X <input type="number" id="pos-x" step="0.1"></label>
+                </div>
+                <div class="control-group">
+                    <label>Y <input type="number" id="pos-y" step="0.1"></label>
+                </div>
+                <div class="control-group">
+                    <label>Z <input type="number" id="pos-z" step="0.1"></label>
                 </div>
             </div>
 
-
+            <div class="editor-section controls-grid">
+                <h4>Obrót (stopnie)</h4>
+                <div class="control-group">
+                    <label>X <input type="number" id="rot-x" step="5"></label>
+                </div>
+                <div class="control-group">
+                    <label>Y <input type="number" id="rot-y" step="5"></label>
+                </div>
+                <div class="control-group">
+                    <label>Z <input type="number" id="rot-z" step="5"></label>
+                </div>
+            </div>
             <div class="editor-section">
                 <h3>Zamień na:</h3>
                 <div id="flower-replace-list"></div>

@@ -135,15 +135,60 @@ export function initFlowerEditor() {
             console.log('Brak wybranego kwiatu do usunięcia');
         }
     });
-    if (getSelectedFlower()!=null) {
-        const slider = document.getElementById('slide');
-        output.innerHTML = getSelectedFlower().position.y;
 
-        slider.oninput = function () {
-            output.innerHTML = this.value;
-            getSelectedFlower().position.y = this.value;
+    // --- NOWA OBSŁUGA POZYCJI I ROTACJI ---
+    const inputs = {
+        posX: document.getElementById('pos-x'),
+        posY: document.getElementById('pos-y'),
+        posZ: document.getElementById('pos-z'),
+        rotX: document.getElementById('rot-x'),
+        rotY: document.getElementById('rot-y'),
+        rotZ: document.getElementById('rot-z'),
+    };
+
+    // Funkcja aktualizująca kwiat na podstawie inputów
+    const updateFlowerFromInputs = () => {
+        const flower = getSelectedFlower();
+        if (!flower) return;
+
+        flower.position.set(
+            parseFloat(inputs.posX.value) || 0,
+            parseFloat(inputs.posY.value) || 0,
+            parseFloat(inputs.posZ.value) || 0
+        );
+
+        // Konwersja stopni na radiany
+        flower.rotation.set(
+            THREE.MathUtils.degToRad(parseFloat(inputs.rotX.value) || 0),
+            THREE.MathUtils.degToRad(parseFloat(inputs.rotY.value) || 0),
+            THREE.MathUtils.degToRad(parseFloat(inputs.rotZ.value) || 0)
+        );
+    };
+
+    // Dodaj nasłuchiwacze do wszystkich inputów
+    Object.values(inputs).forEach(input => {
+        if (input) {
+            input.addEventListener('input', updateFlowerFromInputs);
+            input.addEventListener('change', updateFlowerFromInputs);
         }
-    }
+    });
+
+    // Zdefiniuj globalną funkcję, którą Raycaster wywoła po kliknięciu kwiata
+    window.onFlowerSelected = (flower) => {
+        if (!flower) return;
+
+        // Wypełnij pola wartościami z kwiata
+        inputs.posX.value = flower.position.x.toFixed(2);
+        inputs.posY.value = flower.position.y.toFixed(2);
+        inputs.posZ.value = flower.position.z.toFixed(2);
+
+        // Konwersja radianów na stopnie dla użytkownika
+        inputs.rotX.value = THREE.MathUtils.radToDeg(flower.rotation.x).toFixed(0);
+        inputs.rotY.value = THREE.MathUtils.radToDeg(flower.rotation.y).toFixed(0);
+        inputs.rotZ.value = THREE.MathUtils.radToDeg(flower.rotation.z).toFixed(0);
+    };
+    // ----------------------------------------
+
     const editorList = document.getElementById('flower-replace-list');
 
     flowerTypes.forEach(flower => {
