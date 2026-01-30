@@ -5,10 +5,16 @@
 import {getCamera, getRenderer, getScene} from "./scene.js";
 
 const raycaster = new THREE.Raycaster();
-const container = document.getElementById('sidebar');
 
 let selectedFlower = null;
 let originalMaterials = new Map(); // Przechowuje oryginalne materiały
+
+// Zmienne do rozróżnienia tap vs drag na dotyku
+let touchStartTime = 0;
+let touchStartPosition = { x: 0, y: 0 };
+let touchMoved = false;
+const TAP_THRESHOLD_TIME = 300; // ms
+const TAP_THRESHOLD_DISTANCE = 15; // px
 
 /**
  * Zapisuje oryginalne materiały obiektu
@@ -96,6 +102,9 @@ export function unhighlightFlower(flower) {
 export function showFlowerEditor() {
     const editor = document.getElementById('flower-editor');
     editor.style.display = 'block';
+
+    // Dodaj klasę do body dla mobile - ukrywa sidebar
+    document.body.classList.add('editor-active');
 }
 
 /**
@@ -104,6 +113,9 @@ export function showFlowerEditor() {
 export function hideFlowerEditor() {
     const editor = document.getElementById('flower-editor');
     editor.style.display = 'none';
+
+    // Usuń klasę z body - pokazuje sidebar
+    document.body.classList.remove('editor-active');
 }
 
 /**
@@ -112,8 +124,6 @@ export function hideFlowerEditor() {
 export function replaceSelectedFlower(newFlowerType) {
     if (!selectedFlower) return;
 
-    // Tutaj dodaj funkcję zamiany kwiatu w flowers.js
-    // Na razie tylko zmiana koloru jako placeholder
     selectedFlower.traverse((child) => {
         if (child.isMesh && child.material) {
             const color = new THREE.Color(newFlowerType.color);
@@ -130,7 +140,6 @@ export function replaceSelectedFlower(newFlowerType) {
  * Sprawdza czy obiekt jest kwiatem (nie podłogą ani innym elementem)
  */
 function isFlower(object) {
-    // Sprawdź czy obiekt ma userData.flowerType (ustawiane w flowers.js)
     let current = object;
     while (current) {
         if (current.userData && current.userData.flowerType) {
@@ -146,33 +155,50 @@ function isFlower(object) {
 }
 
 /**
- * Obsługa kliknięcia myszy
+ * Przetwarza kliknięcie/dotknięcie i wybiera kwiat
  */
-export function onMouseDown(event) {
-    // Ignoruj kliknięcia w sidebar i edytorze
-    if (event.target.closest('#sidebar') || event.target.closest('#flower-editor')) return;
+function processClick(clientX, clientY) {
+    const renderer = getRenderer();
+    const camera = getCamera();
+    const scene = getScene();
 
-    // Ignoruj kliknięcia środkowym przyciskiem myszy (scroll wheel)
-    if (event.button !== 0) return;
+    if (!renderer || !camera || !scene) {
+        console.error('Scene not initialized');
+        return;
+    }
 
+    // Użyj getBoundingClientRect dla dokładnych współrzędnych canvas
+    const canvasRect = renderer.domElement.getBoundingClientRect();
+
+    // Oblicz współrzędne względem canvas
+    const canvasX = clientX - canvasRect.left;
+    const canvasY = clientY - canvasRect.top;
+
+    // Sprawdź czy kliknięcie jest w obrębie canvas
+    if (canvasX < 0 || canvasX > canvasRect.width ||
+        canvasY < 0 || canvasY > canvasRect.height) {
+        return;
+    }
+
+    // Normalizuj współrzędne do zakresu [-1, 1]
     const coords = new THREE.Vector2(
-        ((event.clientX - container.clientWidth) / getRenderer().domElement.clientWidth) * 2 - 1,
-        -(event.clientY / getRenderer().domElement.clientHeight) * 2 + 1,
+        (canvasX / canvasRect.width) * 2 - 1,
+        -(canvasY / canvasRect.height) * 2 + 1
     );
 
-    getScene().updateMatrixWorld(true);
-    raycaster.setFromCamera(coords, getCamera());
+    scene.updateMatrixWorld(true);
+    raycaster.setFromCamera(coords, camera);
 
-    const intersections = raycaster.intersectObjects(getScene().children, true);
+    const intersections = raycaster.intersectObjects(scene.children, true);
 
     if (intersections.length > 0) {
-        // Znajdź główną grupę kwiatu (nie mesh, ale parent group)
+        // Znajdź główną grupę kwiatu
         let flowerGroup = intersections[0].object;
         while (flowerGroup.parent && flowerGroup.parent.type !== 'Scene') {
             flowerGroup = flowerGroup.parent;
         }
 
-        // Sprawdź czy to rzeczywiście kwiat (nie podłoga)
+        // Sprawdź czy to rzeczywiście kwiat
         if (!isFlower(intersections[0].object)) {
             console.log('Kliknięto na obiekt, który nie jest kwiatem');
             return;
@@ -191,13 +217,76 @@ export function onMouseDown(event) {
         highlightFlower(selectedFlower);
         showFlowerEditor();
 
-        // [DODANO] Powiadom UI o wybraniu kwiatu
+        // Powiadom UI o wybraniu kwiatu
         if (window.onFlowerSelected) {
             window.onFlowerSelected(selectedFlower);
         }
 
         console.log('Wybrany kwiat:', selectedFlower);
     }
+}
+
+/**
+ * Obsługa kliknięcia myszy
+ */
+export function onMouseDown(event) {
+    // Ignoruj kliknięcia w sidebar i edytorze
+    if (event.target.closest('#sidebar') || event.target.closest('#flower-editor')) return;
+
+    // Ignoruj kliknięcia innym niż lewym przyciskiem
+    if (event.button !== 0) return;
+
+    processClick(event.clientX, event.clientY);
+}
+
+/**
+ * Obsługa początku dotyku - zapisuje pozycję startową
+ */
+export function onTouchStart(event) {
+    if (event.touches.length !== 1) return;
+
+    touchStartTime = Date.now();
+    touchStartPosition = {
+        x: event.touches[0].clientX,
+        y: event.touches[0].clientY
+    };
+    touchMoved = false;
+}
+
+/**
+ * Obsługa ruchu dotyku - sprawdza czy użytkownik przeciąga
+ */
+export function onTouchMove(event) {
+    if (event.touches.length !== 1) {
+        touchMoved = true;
+        return;
+    }
+
+    const dx = event.touches[0].clientX - touchStartPosition.x;
+    const dy = event.touches[0].clientY - touchStartPosition.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance > TAP_THRESHOLD_DISTANCE) {
+        touchMoved = true;
+    }
+}
+
+/**
+ * Obsługa końca dotyku - wykrywa tap i wybiera kwiat
+ */
+export function onTouchEnd(event) {
+    // Ignoruj dotknięcia w sidebar i edytorze
+    if (event.target.closest('#sidebar') || event.target.closest('#flower-editor')) return;
+
+    const touchDuration = Date.now() - touchStartTime;
+
+    // Sprawdź czy to był tap (krótkie dotknięcie bez ruchu)
+    if (!touchMoved && touchDuration < TAP_THRESHOLD_TIME) {
+        console.log('Tap detected at:', touchStartPosition.x, touchStartPosition.y);
+        processClick(touchStartPosition.x, touchStartPosition.y);
+    }
+
+    touchMoved = false;
 }
 
 /**
@@ -210,7 +299,6 @@ export function updateSelectionAfterReplace(newFlowerMesh) {
     selectedFlower = newFlowerMesh;
     highlightFlower(selectedFlower);
 
-    // [DODANO] Aktualizuj UI po zamianie
     if (window.onFlowerSelected) {
         window.onFlowerSelected(selectedFlower);
     }
@@ -222,11 +310,10 @@ export function updateSelectionAfterReplace(newFlowerMesh) {
 export function getSelectedFlower() {
     return selectedFlower;
 }
+
 export function setNullSelectedFlower() {
     selectedFlower = null;
-
 }
-
 
 /**
  * Czyści zaznaczenie

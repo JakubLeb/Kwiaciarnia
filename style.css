@@ -300,7 +300,9 @@ h1 {
     color: #6b7280;
 }
 
-/* Edytor kwiatu */
+/* ============================================ */
+/* EDYTOR KWIATU - DESKTOP */
+/* ============================================ */
 #flower-editor {
     position: fixed;
     right: 0;
@@ -513,6 +515,11 @@ h1 {
         max-height: none;
     }
 
+    /* Ukryj sidebar gdy edytor jest aktywny */
+    body.editor-active #sidebar {
+        display: none;
+    }
+
     #canvas-container {
         order: 1;
         width: 100%;
@@ -641,28 +648,44 @@ h1 {
         line-height: 1.3;
     }
 
-    /* Edytor kwiatu - fullscreen na mobile */
+    /* ============================================ */
+    /* EDYTOR KWIATU - MOBILE (w miejscu sidebara) */
+    /* ============================================ */
     #flower-editor {
+        position: relative;
+        right: auto;
+        top: auto;
         width: 100%;
         height: auto;
-        max-height: 70vh;
-        bottom: 0;
-        top: auto;
-        border-radius: 20px 20px 0 0;
-        animation: slideInUp 0.3s ease;
+        max-height: none;
+        order: 2;
+        border-radius: 0;
+        box-shadow: 0 -2px 20px rgba(0,0,0,0.1);
+        animation: none;
+        padding: 16px;
     }
 
-    @keyframes slideInUp {
-        from {
-            transform: translateY(100%);
-        }
-        to {
-            transform: translateY(0);
-        }
+    .editor-header {
+        margin-bottom: 16px;
+        padding-bottom: 12px;
     }
 
     .editor-header h2 {
-        font-size: 1.2em;
+        font-size: 1.3em;
+    }
+
+    .close-btn {
+        width: 40px;
+        height: 40px;
+    }
+
+    .editor-section {
+        margin-bottom: 16px;
+    }
+
+    .editor-content h3 {
+        font-size: 14px;
+        margin-bottom: 10px;
     }
 
     #flower-replace-list {
@@ -689,6 +712,11 @@ h1 {
         font-size: 13px;
     }
 
+    /* Ukryj sekcje pozycji i rotacji na mobile - za skomplikowane */
+    .controls-grid {
+        display: none;
+    }
+
     /* Modal QR */
     .modal-content {
         width: 90%;
@@ -707,6 +735,10 @@ h1 {
 /* ============================================ */
 @media (max-width: 375px) {
     #sidebar {
+        padding: 12px;
+    }
+
+    #flower-editor {
         padding: 12px;
     }
 
@@ -751,6 +783,11 @@ h1 {
     .controls-overlay {
         display: none;
     }
+
+    #flower-replace-list {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
 }
 
 /* ============================================ */
@@ -769,10 +806,20 @@ h1 {
         overflow-y: auto;
     }
 
+    /* Ukryj sidebar gdy edytor jest aktywny */
+    body.editor-active #sidebar {
+        display: none;
+    }
+
     #canvas-container {
         order: 2;
         width: 50%;
         height: 100vh;
+    }
+
+    /* Gdy edytor aktywny, canvas zajmuje połowę */
+    body.editor-active #canvas-container {
+        width: 50%;
     }
 
     #flowers-list {
@@ -786,12 +833,87 @@ h1 {
         right: 8px;
     }
 
+    /* Edytor w miejscu sidebara - poziomo */
     #flower-editor {
+        position: fixed;
+        left: 0;
+        top: 0;
+        right: auto;
         width: 50%;
         height: 100vh;
         max-height: 100vh;
+        order: 1;
         border-radius: 0;
-        animation: slideInRight 0.3s ease;
+        animation: none;
+        overflow-y: auto;
+        padding: 12px;
+        z-index: 100;
+    }
+
+    #flower-editor .editor-header {
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+    }
+
+    #flower-editor .editor-header h2 {
+        font-size: 1.1em;
+    }
+
+    #flower-editor .editor-section {
+        margin-bottom: 12px;
+    }
+
+    #flower-editor .editor-content h3 {
+        font-size: 13px;
+        margin-bottom: 8px;
+    }
+
+    #flower-editor .delete-flower-btn {
+        padding: 10px;
+        font-size: 0.9em;
+    }
+
+    #flower-replace-list {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
+
+    .editor-flower-button {
+        padding: 8px;
+        gap: 6px;
+    }
+
+    .editor-flower-color {
+        width: 20px;
+        height: 20px;
+    }
+
+    .editor-flower-button span {
+        font-size: 12px;
+    }
+
+    /* Pokaż kontrolki pozycji/rotacji w orientacji poziomej */
+    .controls-grid {
+        display: block;
+    }
+
+    .controls-grid h4 {
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+
+    .controls-grid .control-group {
+        margin-bottom: 4px;
+    }
+
+    .controls-grid .control-group label {
+        font-size: 11px;
+    }
+
+    .controls-grid .control-group input {
+        width: 60px;
+        padding: 4px;
+        font-size: 11px;
     }
 }
 

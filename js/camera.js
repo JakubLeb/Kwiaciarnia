@@ -1,277 +1,209 @@
 // ============================================
-// INTERFEJS UŻYTKOWNIKA
+// KONTROLKI KAMERY
 // ============================================
 
-import { flowerTypes } from './config.js';
-import {
-    addFlower,
-    removeLastFlower,
-    clearAllFlowers,
-    generateFullBouquet,
-    getFlowersCount,
-    getAvailablePositionsCount,
-    getTotalPositions,
-    replaceFlower,
-    deleteFlower,
-    getBouquetUrl
-} from './flowers.js';
-import {
-    getSelectedFlower,
-    setNullSelectedFlower,
-    updateSelectionAfterReplace,
-    onMouseDown,
-    onTouchEnd,
-    unhighlightFlower,
-    hideFlowerEditor
-} from './Raycaster.js';
+import { CAMERA_CONTROLS_CONFIG } from './config.js';
 
-let scene;
-let onFlowerChangeCallback = null;
+let camera, domElement;
+let isRotating = false;
+let isZooming = false;
+
+// Stan kamery
+let spherical = {
+    radius: CAMERA_CONTROLS_CONFIG.defaultDistance,
+    theta: 0,
+    phi: Math.PI / 4
+};
+
+// Pozycje myszy/dotyku
+let previousMousePosition = { x: 0, y: 0 };
+let previousTouchDistance = 0;
+
+// Zmienne do rozróżnienia tap vs drag na urządzeniach dotykowych
+let touchStartTime = 0;
+let touchStartPosition = { x: 0, y: 0 };
+let touchMoved = false;
+const TAP_THRESHOLD_TIME = 300; // ms
+const TAP_THRESHOLD_DISTANCE = 10; // px
 
 /**
- * Inicjalizuje interfejs użytkownika
+ * Konfiguruje kontrolki kamery
  */
-export function initUI(sceneObj, onFlowerChange) {
-    scene = sceneObj;
-    onFlowerChangeCallback = onFlowerChange;
+export function setupCameraControls(cameraRef, domElementRef) {
+    camera = cameraRef;
+    domElement = domElementRef;
 
-    createFlowersList();
-    setupActionButtons();
-    setupDeleteCallback();
-    updateUI();
+    // Obsługa myszy
+    domElement.addEventListener('mousedown', onMouseDown);
+    domElement.addEventListener('mousemove', onMouseMove);
+    domElement.addEventListener('mouseup', onMouseUp);
+    domElement.addEventListener('mouseleave', onMouseUp);
+    domElement.addEventListener('wheel', onWheel, { passive: false });
+
+    // Obsługa dotyku
+    domElement.addEventListener('touchstart', onTouchStart, { passive: false });
+    domElement.addEventListener('touchmove', onTouchMove, { passive: false });
+    domElement.addEventListener('touchend', onTouchEnd, { passive: false });
+
+    // Początkowa aktualizacja pozycji kamery
+    updateCameraPosition();
 }
 
 /**
- * Konfiguruje callback dla usuwania kwiatu z edytora
+ * Aktualizuje pozycję kamery na podstawie współrzędnych sferycznych
  */
-function setupDeleteCallback() {
-    window.deleteSelectedFlowerCallback = (flowerMesh) => {
-        deleteFlower(flowerMesh, scene);
-        updateUI();
-        if (onFlowerChangeCallback) onFlowerChangeCallback();
-    };
+function updateCameraPosition() {
+    // Ogranicz phi (kąt pionowy) żeby kamera nie przeszła przez biegun
+    spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+
+    // Ogranicz radius (zoom)
+    spherical.radius = Math.max(
+        CAMERA_CONTROLS_CONFIG.minDistance,
+        Math.min(CAMERA_CONTROLS_CONFIG.maxDistance, spherical.radius)
+    );
+
+    // Konwersja współrzędnych sferycznych na kartezjańskie
+    camera.position.x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
+    camera.position.y = spherical.radius * Math.cos(spherical.phi);
+    camera.position.z = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
+
+    camera.lookAt(0, 0, 0);
 }
 
-/**
- * Tworzy listę kwiatów
- */
-function createFlowersList() {
-    const flowersList = document.getElementById('flowers-list');
+// ============================================
+// OBSŁUGA MYSZY
+// ============================================
 
-    flowerTypes.forEach(flower => {
-        const container = document.createElement('div');
-        container.className = 'flower-item-container';
-        container.setAttribute('data-flower-id', flower.id);
-
-        // Sekcja informacyjna
-        const infoSection = document.createElement('div');
-        infoSection.className = 'flower-info';
-
-        const colorDiv = document.createElement('div');
-        colorDiv.className = 'flower-color';
-        colorDiv.style.backgroundColor = `#${flower.color.toString(16).padStart(6, '0')}`;
-
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'flower-name';
-        nameSpan.textContent = flower.name;
-
-        infoSection.appendChild(colorDiv);
-        infoSection.appendChild(nameSpan);
-        container.appendChild(infoSection);
-
-        // Przycisk dodania jednego kwiatu
-        const btnAddOne = document.createElement('button');
-        btnAddOne.className = 'flower-action-button btn-add-one';
-        btnAddOne.textContent = '➕';
-        btnAddOne.addEventListener('click', async () => {
-            await addFlower(flower, scene);
-            updateUI();
-            if (onFlowerChangeCallback) onFlowerChangeCallback();
-        });
-
-        // Przycisk generowania bukietu
-        const btnAddBouquet = document.createElement('button');
-        btnAddBouquet.className = 'flower-action-button btn-add-bouquet';
-        btnAddBouquet.textContent = '💐';
-        btnAddBouquet.addEventListener('click', async () => {
-            await generateFullBouquet(flower, scene);
-            updateUI();
-            if (onFlowerChangeCallback) onFlowerChangeCallback();
-        });
-
-        container.appendChild(btnAddOne);
-        container.appendChild(btnAddBouquet);
-        flowersList.appendChild(container);
-    });
-}
-
-/**
- * Tworzy listę kwiatów w edytorze
- */
-export function initFlowerEditor() {
-    const canvasContainer = document.getElementById('canvas-container');
-
-    // Obsługa myszy - na całym dokumencie
-    document.addEventListener('mousedown', onMouseDown);
-
-    // Obsługa dotyku dla urządzeń mobilnych - na kontenerze canvas
-    if (canvasContainer) {
-        // Używamy touchend, żeby odróżnić kliknięcie od przeciągania
-        canvasContainer.addEventListener('touchend', (event) => {
-            // Sprawdź czy to było krótkie dotknięcie (nie przeciąganie)
-            onTouchEnd(event);
-        }, { passive: true });
+function onMouseDown(event) {
+    if (event.button === 0) { // Lewy przycisk myszy
+        isRotating = true;
+        previousMousePosition = { x: event.clientX, y: event.clientY };
     }
+}
 
-    const closeBtn = document.getElementById('close-editor');
-    closeBtn.addEventListener('click', () => {
-        if (getSelectedFlower()) {
-            unhighlightFlower(getSelectedFlower());
-            setNullSelectedFlower();
-        }
-        hideFlowerEditor();
-    });
+function onMouseMove(event) {
+    if (!isRotating) return;
 
-    const deleteBtn = document.getElementById('delete-flower');
-    deleteBtn.addEventListener('click', (event) => {
-        event.stopPropagation();
-        if (getSelectedFlower()) {
-            console.log('Usuwanie kwiatu:', getSelectedFlower());
-            if (window.deleteSelectedFlowerCallback) {
-                window.deleteSelectedFlowerCallback(getSelectedFlower());
-            }
-            setNullSelectedFlower();
-            hideFlowerEditor();
-        } else {
-            console.log('Brak wybranego kwiatu do usunięcia');
-        }
-    });
+    const deltaX = event.clientX - previousMousePosition.x;
+    const deltaY = event.clientY - previousMousePosition.y;
 
-    // Slider do zmiany wysokości kwiatu
-    const slider = document.getElementById('slide');
-    if (slider) {
-        slider.oninput = function() {
-            if (getSelectedFlower() != null) {
-                getSelectedFlower().position.y = parseFloat(this.value);
-            }
+    spherical.theta -= deltaX * CAMERA_CONTROLS_CONFIG.rotationSpeed;
+    spherical.phi += deltaY * CAMERA_CONTROLS_CONFIG.rotationSpeed;
+
+    previousMousePosition = { x: event.clientX, y: event.clientY };
+    updateCameraPosition();
+}
+
+function onMouseUp() {
+    isRotating = false;
+}
+
+function onWheel(event) {
+    event.preventDefault();
+    spherical.radius += event.deltaY * CAMERA_CONTROLS_CONFIG.zoomSpeed;
+    updateCameraPosition();
+}
+
+// ============================================
+// OBSŁUGA DOTYKU
+// ============================================
+
+function onTouchStart(event) {
+    // Zapisz czas i pozycję rozpoczęcia dotyku
+    touchStartTime = Date.now();
+    touchMoved = false;
+
+    if (event.touches.length === 1) {
+        // Jeden palec - rotacja
+        isRotating = true;
+        previousMousePosition = {
+            x: event.touches[0].clientX,
+            y: event.touches[0].clientY
         };
+        touchStartPosition = {
+            x: event.touches[0].clientX,
+            y: event.touches[0].clientY
+        };
+    } else if (event.touches.length === 2) {
+        // Dwa palce - zoom
+        isRotating = false;
+        isZooming = true;
+        previousTouchDistance = getTouchDistance(event.touches);
+    }
+}
+
+function onTouchMove(event) {
+    // Sprawdź czy użytkownik rzeczywiście przeciąga
+    if (event.touches.length === 1) {
+        const dx = event.touches[0].clientX - touchStartPosition.x;
+        const dy = event.touches[0].clientY - touchStartPosition.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance > TAP_THRESHOLD_DISTANCE) {
+            touchMoved = true;
+        }
+    } else {
+        touchMoved = true;
     }
 
-    const editorList = document.getElementById('flower-replace-list');
+    if (event.touches.length === 1 && isRotating && touchMoved) {
+        event.preventDefault();
 
-    flowerTypes.forEach(flower => {
-        const button = document.createElement('button');
-        button.className = 'editor-flower-button';
+        const deltaX = event.touches[0].clientX - previousMousePosition.x;
+        const deltaY = event.touches[0].clientY - previousMousePosition.y;
 
-        const colorDiv = document.createElement('div');
-        colorDiv.className = 'editor-flower-color';
-        colorDiv.style.backgroundColor = `#${flower.color.toString(16).padStart(6, '0')}`;
+        spherical.theta -= deltaX * CAMERA_CONTROLS_CONFIG.rotationSpeed;
+        spherical.phi += deltaY * CAMERA_CONTROLS_CONFIG.rotationSpeed;
 
-        const nameSpan = document.createElement('span');
-        nameSpan.textContent = flower.name;
+        previousMousePosition = {
+            x: event.touches[0].clientX,
+            y: event.touches[0].clientY
+        };
+        updateCameraPosition();
+    } else if (event.touches.length === 2 && isZooming) {
+        event.preventDefault();
 
-        button.appendChild(colorDiv);
-        button.appendChild(nameSpan);
+        const currentDistance = getTouchDistance(event.touches);
+        const delta = previousTouchDistance - currentDistance;
 
-        button.addEventListener('click', async (event) => {
-            event.stopPropagation();
-            const selectedFlower = getSelectedFlower();
-            if (selectedFlower) {
-                console.log('Zamiana kwiatu na:', flower.name);
-                const newFlower = await replaceFlower(selectedFlower, flower, scene);
-                if (newFlower) {
-                    updateSelectionAfterReplace(newFlower);
-                }
-                updateUI();
-                if (onFlowerChangeCallback) onFlowerChangeCallback();
-            }
-        });
+        spherical.radius += delta * CAMERA_CONTROLS_CONFIG.zoomSpeed * 0.5;
+        previousTouchDistance = currentDistance;
+        updateCameraPosition();
+    }
+}
 
-        editorList.appendChild(button);
-    });
+function onTouchEnd(event) {
+    const touchDuration = Date.now() - touchStartTime;
+
+    // Jeśli to był krótki dotyk bez ruchu - to tap (kliknięcie)
+    // Nie blokujemy tego zdarzenia, pozwalamy mu propagować do Raycastera
+    if (!touchMoved && touchDuration < TAP_THRESHOLD_TIME) {
+        // To jest tap - nie robimy nic, pozwalamy Raycasterowi obsłużyć
+        console.log('Tap detected - allowing click propagation');
+    }
+
+    isRotating = false;
+    isZooming = false;
+    touchMoved = false;
 }
 
 /**
- * Konfiguruje przyciski akcji
+ * Oblicza odległość między dwoma punktami dotyku
  */
-function setupActionButtons() {
-    document.getElementById('btn-remove').addEventListener('click', () => {
-        removeLastFlower(scene);
-        updateUI();
-        if (onFlowerChangeCallback) onFlowerChangeCallback();
-    });
-
-    document.getElementById('btn-clear').addEventListener('click', () => {
-        clearAllFlowers(scene);
-        updateUI();
-        if (onFlowerChangeCallback) onFlowerChangeCallback();
-    });
-
-    document.getElementById('btn-qr').addEventListener('click', () => {
-        const url = getBouquetUrl();
-
-        if (getFlowersCount() === 0) {
-            alert("Bukiet jest pusty!");
-            return;
-        }
-
-        const modal = document.getElementById('qr-modal');
-        const qrContainer = document.getElementById('qr-code-container');
-        const textSummary = document.getElementById('qr-text-summary');
-
-        qrContainer.innerHTML = '';
-
-        new QRCode(qrContainer, {
-            text: url,
-            width: 256,
-            height: 256,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.L
-        });
-
-        textSummary.innerHTML = `
-            <strong>Zeskanuj, aby otworzyć ten bukiet.</strong><br><br>
-        `;
-
-        modal.style.display = 'flex';
-    });
-
-    // Zamykanie modala
-    document.getElementById('close-qr').addEventListener('click', () => {
-        document.getElementById('qr-modal').style.display = 'none';
-    });
-
-    // Zamykanie modala po kliknięciu w tło
-    document.getElementById('qr-modal').addEventListener('click', (e) => {
-        if (e.target.id === 'qr-modal') {
-            document.getElementById('qr-modal').style.display = 'none';
-        }
-    });
+function getTouchDistance(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
 }
 
 /**
- * Aktualizuje stan interfejsu
+ * Gettery dla stanu kamery
  */
-export function updateUI() {
-    const flowerCount = getFlowersCount();
-    const maxPositions = getTotalPositions();
-    const availableCount = getAvailablePositionsCount();
-    const btnQr = document.getElementById('btn-qr');
+export function getCameraState() {
+    return { ...spherical };
+}
 
-    if (btnQr) btnQr.disabled = flowerCount === 0;
-
-    // Aktualizacja liczników
-    document.getElementById('flower-counter').textContent = `${flowerCount} / ${maxPositions}`;
-    document.getElementById('available-text').textContent = `Dostępne miejsca: ${availableCount}`;
-
-    // Aktualizacja przycisków akcji
-    document.getElementById('btn-remove').disabled = flowerCount === 0;
-    document.getElementById('btn-clear').disabled = flowerCount === 0;
-
-    // Aktualizacja przycisków dodawania
-    const addOneButtons = document.querySelectorAll('.btn-add-one');
-    addOneButtons.forEach(btn => {
-        btn.disabled = availableCount === 0;
-    });
+export function setCameraState(newState) {
+    spherical = { ...spherical, ...newState };
+    updateCameraPosition();
 }
