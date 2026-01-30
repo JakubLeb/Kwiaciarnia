@@ -50,7 +50,6 @@ export function generateFlowerPositions(ringsConfig, includeCenter) {
 function createProceduralFlower(type, positionIndex) {
     const position = flowerPositions[positionIndex];
 
-    // Główka kwiatu
     const petalCount = 8;
     const petalGroup = new THREE.Group();
 
@@ -71,28 +70,23 @@ function createProceduralFlower(type, positionIndex) {
         petalGroup.add(petal);
     }
 
-    // Środek kwiatu
     const centerGeometry = new THREE.SphereGeometry(0.25, 16, 16);
     const centerMaterial = new THREE.MeshPhongMaterial({ color: 0xffff00 });
     const center = new THREE.Mesh(centerGeometry, centerMaterial);
     center.castShadow = true;
     petalGroup.add(center);
 
-    // Łodyga
     const stemGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.5, 8);
     const stemMaterial = new THREE.MeshPhongMaterial({ color: 0x228b22 });
     const stem = new THREE.Mesh(stemGeometry, stemMaterial);
     stem.position.y = -0.75;
 
-    // Grupa kwiatu
     const flower = new THREE.Group();
     flower.add(petalGroup);
     flower.add(stem);
 
-    // Ustawienie pozycji
     flower.position.set(position.x, position.y, position.z);
 
-    // Rotacja
     if (position.x !== 0 || position.z !== 0) {
         const angleToCenter = Math.atan2(position.x, position.z);
         flower.rotation.y = angleToCenter;
@@ -109,7 +103,6 @@ function createProceduralFlower(type, positionIndex) {
 function cloneMaterials(object) {
     object.traverse((child) => {
         if (child.isMesh && child.material) {
-            // Klonuj materiał (obsługuje zarówno pojedynczy materiał jak i tablicę)
             if (Array.isArray(child.material)) {
                 child.material = child.material.map(mat => mat.clone());
             } else {
@@ -131,22 +124,17 @@ async function createFlowerFromGLB(type, positionIndex) {
         const flower = new THREE.Group();
         flower.add(model);
 
-        // WAŻNE: Klonuj materiały dla każdej instancji kwiatu
         cloneMaterials(flower);
 
-        // Ustawienie pozycji
         flower.position.set(position.x, position.y, position.z);
 
-        // Rotacja Y (kierunek od środka)
         if (position.x !== 0 || position.z !== 0) {
             const angleToCenter = Math.atan2(position.x, position.z);
             flower.rotation.y = angleToCenter;
         }
 
-        // Rotacja X (pochylenie)
         flower.rotateX(position.tiltAngle);
 
-        // Zapisz typ kwiatu w userData
         flower.userData.flowerType = type;
         flower.userData.positionIndex = positionIndex;
 
@@ -161,7 +149,6 @@ async function createFlowerFromGLB(type, positionIndex) {
  * Zamienia kwiat na inny typ
  */
 export async function replaceFlower(oldFlowerMesh, newFlowerType, scene) {
-    // Znajdź kwiat w tablicy flowers
     const flowerIndex = flowers.findIndex(f => f.mesh === oldFlowerMesh);
     if (flowerIndex === -1) {
         console.error('Nie znaleziono kwiatu do zamiany');
@@ -170,21 +157,16 @@ export async function replaceFlower(oldFlowerMesh, newFlowerType, scene) {
 
     const positionIndex = flowers[flowerIndex].positionIndex;
 
-    // Usuń stary kwiat ze sceny
     scene.remove(oldFlowerMesh);
 
-    // Stwórz nowy kwiat
     const newFlower = await createFlowerFromGLB(newFlowerType, positionIndex);
 
-    // Dodaj nowy kwiat do sceny
     scene.add(newFlower);
 
-    // Zaktualizuj tablicę flowers
     flowers[flowerIndex].mesh = newFlower;
 
     console.log(`Zamieniono kwiat na ${newFlowerType.name}`);
 
-    // Zwróć nowy kwiat, aby można było zaktualizować zaznaczenie
     return newFlower;
 }
 
@@ -217,7 +199,6 @@ export async function addFlower(type, scene) {
  * Usuwa konkretny kwiat ze sceny
  */
 export function deleteFlower(flowerMesh, scene) {
-    // Znajdź kwiat w tablicy flowers
     const flowerIndex = flowers.findIndex(f => f.mesh === flowerMesh);
     if (flowerIndex === -1) {
         console.error('Nie znaleziono kwiatu do usunięcia');
@@ -226,14 +207,11 @@ export function deleteFlower(flowerMesh, scene) {
 
     const flower = flowers[flowerIndex];
 
-    // Usuń kwiat ze sceny
     scene.remove(flowerMesh);
 
-    // Zwolnij pozycję
     availablePositions.unshift(flower.positionIndex);
     availablePositions.sort((a, b) => a - b);
 
-    // Usuń z tablicy flowers
     flowers.splice(flowerIndex, 1);
 
     console.log(`Usunięto kwiat z pozycji ${flower.positionIndex}`);
@@ -275,7 +253,6 @@ export async function generateFullBouquet(flowerType, scene) {
         return;
     }
 
-    // Wstępne załadowanie modelu do cache
     await createFlowerFromGLB(flowerType, 0);
     console.log(`Model dla ${flowerType.name} jest gotowy w cache.`);
 
@@ -291,6 +268,7 @@ export async function generateFullBouquet(flowerType, scene) {
 
     console.log("Bukiet pomyślnie wygenerowany.");
 }
+
 /**
  * Generuje SKOMPRESOWANY URL z zakodowanym stanem bukietu
  */
@@ -301,8 +279,6 @@ export function getBouquetUrl() {
         return url.toString();
     }
 
-    // KOMPRESJA: Zapisujemy tylko [pozycja, indeks_typu_kwiatu]
-    // Zamiast długich nazw, używamy liczb. Np: [5, 0] zamiast {p:5, i:'rose'}
     const bouquetData = flowers.map(f => {
         const typeIndex = flowerTypes.findIndex(t => t.id === f.mesh.userData.flowerType.id);
         return [f.positionIndex, typeIndex];
@@ -316,7 +292,6 @@ export function getBouquetUrl() {
 
     return url.toString();
 }
-
 
 export async function loadBouquetFromUrl(scene) {
     const params = new URLSearchParams(window.location.search);
@@ -332,18 +307,15 @@ export async function loadBouquetFromUrl(scene) {
         clearAllFlowers(scene);
 
         for (const item of bouquetData) {
-            // item to teraz tablica: [pozycja, indeks_typu]
             const positionIndex = item[0];
             const typeIndex = item[1];
 
-            // Pobieramy typ kwiatu z listy na podstawie numeru
             const type = flowerTypes[typeIndex];
 
             if (type) {
                 const flower = await createFlowerFromGLB(type, positionIndex);
                 scene.add(flower);
                 flowers.push({ mesh: flower, positionIndex: positionIndex });
-                // Aktualizacja dostępnych pozycji
                 availablePositions = availablePositions.filter(pos => pos !== positionIndex);
             }
         }

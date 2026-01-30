@@ -4,8 +4,6 @@
 
 const modelCache = new Map();
 
-
-
 /**
  * Ładuje model GLB z URL
  */
@@ -28,7 +26,6 @@ export async function loadGLBModelFromURL(url) {
                     model.scale.multiplyScalar(scale);
 
                     // Wyśrodkowanie modelu
-
                     box.setFromObject(model);
                     const center = box.getCenter(new THREE.Vector3());
                     model.position.sub(center);
