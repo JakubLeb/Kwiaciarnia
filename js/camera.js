@@ -3,6 +3,7 @@
 // ============================================
 
 import { CAMERA_CONTROLS_CONFIG } from './config.js';
+import { isGizmoDragging } from './Raycaster.js';
 
 let camera, domElement;
 let isRotating = false;
@@ -23,8 +24,8 @@ let previousTouchDistance = 0;
 let touchStartTime = 0;
 let touchStartPosition = { x: 0, y: 0 };
 let touchMoved = false;
-const TAP_THRESHOLD_TIME = 300; // ms
-const TAP_THRESHOLD_DISTANCE = 10; // px
+const TAP_THRESHOLD_TIME = 300;
+const TAP_THRESHOLD_DISTANCE = 10;
 
 /**
  * Konfiguruje kontrolki kamery
@@ -53,7 +54,7 @@ export function setupCameraControls(cameraRef, domElementRef) {
  * Aktualizuje pozycję kamery na podstawie współrzędnych sferycznych
  */
 function updateCameraPosition() {
-    // Ogranicz phi (kąt pionowy) żeby kamera nie przeszła przez biegun
+    // Ogranicz phi (kąt pionowy)
     spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
 
     // Ogranicz radius (zoom)
@@ -75,13 +76,22 @@ function updateCameraPosition() {
 // ============================================
 
 function onMouseDown(event) {
-    if (event.button === 0) { // Lewy przycisk myszy
+    // Nie rozpoczynaj rotacji kamery jeśli przeciągamy gizmo
+    if (isGizmoDragging()) return;
+
+    if (event.button === 0) {
         isRotating = true;
         previousMousePosition = { x: event.clientX, y: event.clientY };
     }
 }
 
 function onMouseMove(event) {
+    // Nie obracaj kamery jeśli przeciągamy gizmo
+    if (isGizmoDragging()) {
+        isRotating = false;
+        return;
+    }
+
     if (!isRotating) return;
 
     const deltaX = event.clientX - previousMousePosition.x;
@@ -109,12 +119,13 @@ function onWheel(event) {
 // ============================================
 
 function onTouchStart(event) {
-    // Zapisz czas i pozycję rozpoczęcia dotyku
+    // Nie rozpoczynaj jeśli przeciągamy gizmo
+    if (isGizmoDragging()) return;
+
     touchStartTime = Date.now();
     touchMoved = false;
 
     if (event.touches.length === 1) {
-        // Jeden palec - rotacja
         isRotating = true;
         previousMousePosition = {
             x: event.touches[0].clientX,
@@ -125,7 +136,6 @@ function onTouchStart(event) {
             y: event.touches[0].clientY
         };
     } else if (event.touches.length === 2) {
-        // Dwa palce - zoom
         isRotating = false;
         isZooming = true;
         previousTouchDistance = getTouchDistance(event.touches);
@@ -133,7 +143,13 @@ function onTouchStart(event) {
 }
 
 function onTouchMove(event) {
-    // Sprawdź czy użytkownik rzeczywiście przeciąga
+    // Nie obracaj kamery jeśli przeciągamy gizmo
+    if (isGizmoDragging()) {
+        isRotating = false;
+        isZooming = false;
+        return;
+    }
+
     if (event.touches.length === 1) {
         const dx = event.touches[0].clientX - touchStartPosition.x;
         const dy = event.touches[0].clientY - touchStartPosition.y;
@@ -175,10 +191,7 @@ function onTouchMove(event) {
 function onTouchEnd(event) {
     const touchDuration = Date.now() - touchStartTime;
 
-    // Jeśli to był krótki dotyk bez ruchu - to tap (kliknięcie)
-    // Nie blokujemy tego zdarzenia, pozwalamy mu propagować do Raycastera
     if (!touchMoved && touchDuration < TAP_THRESHOLD_TIME) {
-        // To jest tap - nie robimy nic, pozwalamy Raycasterowi obsłużyć
         console.log('Tap detected - allowing click propagation');
     }
 

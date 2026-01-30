@@ -13,90 +13,95 @@
 <body>
 <div id="container">
     <div id="sidebar">
-        <h1>Kreator Bukietów</h1>
+        <!-- WIDOK GŁÓWNY - dodawanie kwiatów -->
+        <div id="main-view">
+            <h1>Kreator Bukietów</h1>
 
-        <div class="counter-section">
-            <div class="counter-header">
-                <h2>Kwiaty w bukiecie</h2>
-                <span class="counter-badge" id="flower-counter">0 / 27</span>
+            <div class="counter-section">
+                <div class="counter-header">
+                    <h2>Kwiaty w bukiecie</h2>
+                    <span class="counter-badge" id="flower-counter">0 / 27</span>
+                </div>
+                <div class="available-text" id="available-text">Dostępne miejsca: 27</div>
             </div>
-            <div class="available-text" id="available-text">Dostępne miejsca: 27</div>
-        </div>
 
-        <div class="section">
-            <h3>Wybierz kwiat</h3>
-            <div id="flowers-list"></div>
-        </div>
+            <div class="section">
+                <h3>Wybierz kwiat</h3>
+                <div id="flowers-list"></div>
+            </div>
 
-
-        <div class="section">
-            <button class="action-button btn-remove" id="btn-remove" disabled>
-                Usuń ostatni kwiat
-            </button>
-            <button class="action-button btn-clear" id="btn-clear" disabled>
-                Wyczyść bukiet
-            </button>
-            <button class="action-button btn-qr" id="btn-qr">
-                📱 Generuj kod QR
-            </button>
-        </div>
-
-
-        <div class="controls-overlay">
-            <p class="controls-title">Sterowanie 3D</p>
-            <p class="control-item">Kliknij i przeciągnij 🖱️: Obrót kamery</p>
-            <p class="control-item">Scroll (kółko) 🔍 : Zoom (oddal/przybliż)</p>
-            <p class="control-item">Kliknij kwiat 🌸: Edytuj kwiat</p>
-        </div>
-    </div>
-
-    <div id="flower-editor" style="display: none;">
-        <div class="editor-header">
-            <h2>Edytor kwiatu</h2>
-            <button id="close-editor" class="close-btn">✕</button>
-        </div>
-
-        <div class="editor-content">
-            <div class="editor-section">
-                <button id="delete-flower" class="delete-flower-btn">
-                    🗑️ Usuń kwiat
+            <div class="section">
+                <button class="action-button btn-remove" id="btn-remove" disabled>
+                    Usuń ostatni kwiat
+                </button>
+                <button class="action-button btn-clear" id="btn-clear" disabled>
+                    Wyczyść bukiet
+                </button>
+                <button class="action-button btn-qr" id="btn-qr">
+                    📱 Generuj kod QR
                 </button>
             </div>
+        </div>
 
-            <div class="editor-section controls-grid">
-                <h4>Pozycja</h4>
-                <div class="control-group">
-                    <label>X <input type="number" id="pos-x" step="0.1"></label>
-                </div>
-                <div class="control-group">
-                    <label>Y <input type="number" id="pos-y" step="0.1"></label>
-                </div>
-                <div class="control-group">
-                    <label>Z <input type="number" id="pos-z" step="0.1"></label>
-                </div>
+        <!-- WIDOK EDYTORA - pojawia się w miejsce głównego -->
+        <div id="flower-editor" style="display: none;">
+            <div class="editor-header">
+                <h2>Edytor kwiatu</h2>
+                <button id="close-editor" class="close-btn">✕</button>
             </div>
 
-            <div class="editor-section controls-grid">
-                <h4>Obrót (stopnie)</h4>
-                <div class="control-group">
-                    <label>X <input type="number" id="rot-x" step="5"></label>
+            <div class="editor-content">
+                <!-- Przycisk usuwania -->
+                <div class="editor-section">
+                    <button id="delete-flower" class="delete-flower-btn">
+                        🗑️ Usuń kwiat
+                    </button>
                 </div>
-                <div class="control-group">
-                    <label>Y <input type="number" id="rot-y" step="5"></label>
+
+                <!-- Przyciski trybu edycji -->
+                <div class="editor-section">
+                    <h3>Narzędzia transformacji</h3>
+                    <p class="editor-hint">Wybierz narzędzie, a przy kwiecie pojawią się kontrolki</p>
+                    <div class="edit-mode-buttons">
+                        <button id="btn-edit-position" class="edit-mode-btn" title="Przesuń kwiat">
+                            <span class="edit-mode-icon">↔️</span>
+                            <span class="edit-mode-label">Pozycja</span>
+                        </button>
+                        <button id="btn-edit-rotation" class="edit-mode-btn" title="Obróć kwiat">
+                            <span class="edit-mode-icon">🔄</span>
+                            <span class="edit-mode-label">Obrót</span>
+                        </button>
+                        <button id="btn-edit-scale" class="edit-mode-btn" title="Skaluj kwiat">
+                            <span class="edit-mode-icon">⤢</span>
+                            <span class="edit-mode-label">Skala</span>
+                        </button>
+                    </div>
+                    <div class="axis-legend">
+                        <span class="axis-item axis-x">X</span>
+                        <span class="axis-item axis-y">Y</span>
+                        <span class="axis-item axis-z">Z</span>
+                    </div>
                 </div>
-                <div class="control-group">
-                    <label>Z <input type="number" id="rot-z" step="5"></label>
+
+                <!-- Lista kwiatów do zamiany -->
+                <div class="editor-section">
+                    <h3>Zamień na:</h3>
+                    <div id="flower-replace-list"></div>
                 </div>
-            </div>
-            <div class="editor-section">
-                <h3>Zamień na:</h3>
-                <div id="flower-replace-list"></div>
             </div>
         </div>
     </div>
 
     <div id="canvas-container"></div>
+
+    <div class="controls-overlay">
+        <p class="controls-title">Sterowanie 3D</p>
+        <p class="control-item">Kliknij i przeciągnij 🖱️: Obrót kamery</p>
+        <p class="control-item">Scroll (kółko) 🔍 : Zoom (oddal/przybliż)</p>
+        <p class="control-item">Kliknij kwiat 🌸: Edytuj kwiat</p>
+    </div>
 </div>
+
 <div id="qr-modal" class="modal-overlay">
     <div class="modal-content">
         <h3>Twój Bukiet 💐</h3>
@@ -105,9 +110,8 @@
         <button id="close-qr" class="action-button" style="margin-top: 20px; background: #6b7280; color: white;">Zamknij</button>
     </div>
 </div>
+
 <script type="module" src="js/main.js"></script>
 
-
 </body>
-
 </html>

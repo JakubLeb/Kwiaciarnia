@@ -3,10 +3,10 @@
 // ============================================
 
 import { BOUQUET_RINGS_CONFIG, INCLUDE_CENTER_FLOWER } from './config.js';
-import { initScene, startAnimation} from './scene.js';
+import { initScene, startAnimation } from './scene.js';
 import { setupCameraControls } from './camera.js';
-import { generateFlowerPositions, initFlowers,loadBouquetFromUrl } from './flowers.js';
-import { initUI, updateUI,initFlowerEditor } from './ui.js';
+import { generateFlowerPositions, initFlowers, loadBouquetFromUrl } from './flowers.js';
+import { initUI, updateUI, initFlowerEditor } from './ui.js';
 
 
 /**
@@ -21,7 +21,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     initFlowers(positions);
 
     // 3. Inicjalizacja sceny 3D
-    const {scene, camera, renderer} = initScene('canvas-container');
+    const { scene, camera, renderer } = initScene('canvas-container');
     console.log('Scena 3D zainicjalizowana');
 
     // 4. Konfiguracja kontrolek kamery
@@ -30,12 +30,11 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     // 5. Inicjalizacja interfejsu użytkownika
     initUI(scene, () => {
-        // Callback wywoływany po każdej zmianie kwiatów
         console.log('Bukiet zaktualizowany');
     });
     console.log('Interfejs użytkownika zainicjalizowany');
 
-    // 6. Inicjalizacja edytora kwiatów (raycaster)
+    // 6. Inicjalizacja edytora kwiatów (raycaster + gizmo)
     initFlowerEditor();
     console.log('Edytor kwiatów zainicjalizowany');
 

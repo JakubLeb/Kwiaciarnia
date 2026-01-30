@@ -20,11 +20,18 @@ import {
     setNullSelectedFlower,
     updateSelectionAfterReplace,
     onMouseDown,
+    onMouseMove,
+    onMouseUp,
     onTouchStart,
     onTouchMove,
     onTouchEnd,
     unhighlightFlower,
-    hideFlowerEditor
+    hideFlowerEditor,
+    initGizmos,
+    setEditMode,
+    getEditMode,
+    EDIT_MODES,
+    isGizmoDragging
 } from './Raycaster.js';
 
 let scene;
@@ -65,7 +72,6 @@ function createFlowersList() {
         container.className = 'flower-item-container';
         container.setAttribute('data-flower-id', flower.id);
 
-        // Sekcja informacyjna
         const infoSection = document.createElement('div');
         infoSection.className = 'flower-info';
 
@@ -81,7 +87,6 @@ function createFlowersList() {
         infoSection.appendChild(nameSpan);
         container.appendChild(infoSection);
 
-        // Przycisk dodania jednego kwiatu
         const btnAddOne = document.createElement('button');
         btnAddOne.className = 'flower-action-button btn-add-one';
         btnAddOne.textContent = '➕';
@@ -91,7 +96,6 @@ function createFlowersList() {
             if (onFlowerChangeCallback) onFlowerChangeCallback();
         });
 
-        // Przycisk generowania bukietu
         const btnAddBouquet = document.createElement('button');
         btnAddBouquet.className = 'flower-action-button btn-add-bouquet';
         btnAddBouquet.textContent = '💐';
@@ -108,21 +112,54 @@ function createFlowersList() {
 }
 
 /**
+ * Aktualizuje stan przycisków trybu edycji
+ */
+function updateEditModeButtons() {
+    const currentMode = getEditMode();
+
+    const btnPosition = document.getElementById('btn-edit-position');
+    const btnRotation = document.getElementById('btn-edit-rotation');
+    const btnScale = document.getElementById('btn-edit-scale');
+
+    [btnPosition, btnRotation, btnScale].forEach(btn => {
+        if (btn) btn.classList.remove('active');
+    });
+
+    switch (currentMode) {
+        case EDIT_MODES.POSITION:
+            if (btnPosition) btnPosition.classList.add('active');
+            break;
+        case EDIT_MODES.ROTATION:
+            if (btnRotation) btnRotation.classList.add('active');
+            break;
+        case EDIT_MODES.SCALE:
+            if (btnScale) btnScale.classList.add('active');
+            break;
+    }
+}
+
+/**
  * Tworzy listę kwiatów w edytorze
  */
 export function initFlowerEditor() {
+    // Inicjalizuj gizmo 3D
+    initGizmos();
+
     const canvasContainer = document.getElementById('canvas-container');
 
-    // Obsługa myszy - na całym dokumencie
+    // Obsługa myszy
     document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
 
-    // Obsługa dotyku dla urządzeń mobilnych - na kontenerze canvas
+    // Obsługa dotyku
     if (canvasContainer) {
-        canvasContainer.addEventListener('touchstart', onTouchStart, { passive: true });
-        canvasContainer.addEventListener('touchmove', onTouchMove, { passive: true });
+        canvasContainer.addEventListener('touchstart', onTouchStart, { passive: false });
+        canvasContainer.addEventListener('touchmove', onTouchMove, { passive: false });
         canvasContainer.addEventListener('touchend', onTouchEnd, { passive: false });
     }
 
+    // Przycisk zamknięcia edytora
     const closeBtn = document.getElementById('close-editor');
     closeBtn.addEventListener('click', () => {
         if (getSelectedFlower()) {
@@ -132,74 +169,61 @@ export function initFlowerEditor() {
         hideFlowerEditor();
     });
 
+    // Przycisk usuwania kwiatu
     const deleteBtn = document.getElementById('delete-flower');
     deleteBtn.addEventListener('click', (event) => {
         event.stopPropagation();
         if (getSelectedFlower()) {
-            console.log('Usuwanie kwiatu:', getSelectedFlower());
             if (window.deleteSelectedFlowerCallback) {
                 window.deleteSelectedFlowerCallback(getSelectedFlower());
             }
             setNullSelectedFlower();
             hideFlowerEditor();
+        }
+    });
+
+    // Przyciski trybu edycji
+    const btnPosition = document.getElementById('btn-edit-position');
+    const btnRotation = document.getElementById('btn-edit-rotation');
+    const btnScale = document.getElementById('btn-edit-scale');
+
+    btnPosition.addEventListener('click', () => {
+        const currentMode = getEditMode();
+        if (currentMode === EDIT_MODES.POSITION) {
+            setEditMode(EDIT_MODES.NONE);
         } else {
-            console.log('Brak wybranego kwiatu do usunięcia');
+            setEditMode(EDIT_MODES.POSITION);
         }
+        updateEditModeButtons();
     });
 
-    // --- OBSŁUGA POZYCJI I ROTACJI ---
-    const inputs = {
-        posX: document.getElementById('pos-x'),
-        posY: document.getElementById('pos-y'),
-        posZ: document.getElementById('pos-z'),
-        rotX: document.getElementById('rot-x'),
-        rotY: document.getElementById('rot-y'),
-        rotZ: document.getElementById('rot-z'),
-    };
-
-    // Funkcja aktualizująca kwiat na podstawie inputów
-    const updateFlowerFromInputs = () => {
-        const flower = getSelectedFlower();
-        if (!flower) return;
-
-        flower.position.set(
-            parseFloat(inputs.posX.value) || 0,
-            parseFloat(inputs.posY.value) || 0,
-            parseFloat(inputs.posZ.value) || 0
-        );
-
-        // Konwersja stopni na radiany
-        flower.rotation.set(
-            THREE.MathUtils.degToRad(parseFloat(inputs.rotX.value) || 0),
-            THREE.MathUtils.degToRad(parseFloat(inputs.rotY.value) || 0),
-            THREE.MathUtils.degToRad(parseFloat(inputs.rotZ.value) || 0)
-        );
-    };
-
-    // Dodaj nasłuchiwacze do wszystkich inputów
-    Object.values(inputs).forEach(input => {
-        if (input) {
-            input.addEventListener('input', updateFlowerFromInputs);
-            input.addEventListener('change', updateFlowerFromInputs);
+    btnRotation.addEventListener('click', () => {
+        const currentMode = getEditMode();
+        if (currentMode === EDIT_MODES.ROTATION) {
+            setEditMode(EDIT_MODES.NONE);
+        } else {
+            setEditMode(EDIT_MODES.ROTATION);
         }
+        updateEditModeButtons();
     });
 
-    // Zdefiniuj globalną funkcję, którą Raycaster wywoła po kliknięciu kwiata
+    btnScale.addEventListener('click', () => {
+        const currentMode = getEditMode();
+        if (currentMode === EDIT_MODES.SCALE) {
+            setEditMode(EDIT_MODES.NONE);
+        } else {
+            setEditMode(EDIT_MODES.SCALE);
+        }
+        updateEditModeButtons();
+    });
+
+    // Callback po wybraniu kwiatu
     window.onFlowerSelected = (flower) => {
         if (!flower) return;
-
-        // Wypełnij pola wartościami z kwiata
-        inputs.posX.value = flower.position.x.toFixed(2);
-        inputs.posY.value = flower.position.y.toFixed(2);
-        inputs.posZ.value = flower.position.z.toFixed(2);
-
-        // Konwersja radianów na stopnie dla użytkownika
-        inputs.rotX.value = THREE.MathUtils.radToDeg(flower.rotation.x).toFixed(0);
-        inputs.rotY.value = THREE.MathUtils.radToDeg(flower.rotation.y).toFixed(0);
-        inputs.rotZ.value = THREE.MathUtils.radToDeg(flower.rotation.z).toFixed(0);
+        updateEditModeButtons();
     };
-    // ----------------------------------------
 
+    // Lista kwiatów do zamiany
     const editorList = document.getElementById('flower-replace-list');
 
     flowerTypes.forEach(flower => {
@@ -220,7 +244,6 @@ export function initFlowerEditor() {
             event.stopPropagation();
             const selectedFlower = getSelectedFlower();
             if (selectedFlower) {
-                console.log('Zamiana kwiatu na:', flower.name);
                 const newFlower = await replaceFlower(selectedFlower, flower, scene);
                 if (newFlower) {
                     updateSelectionAfterReplace(newFlower);
@@ -280,12 +303,10 @@ function setupActionButtons() {
         modal.style.display = 'flex';
     });
 
-    // Zamykanie modala
     document.getElementById('close-qr').addEventListener('click', () => {
         document.getElementById('qr-modal').style.display = 'none';
     });
 
-    // Zamykanie modala po kliknięciu w tło
     document.getElementById('qr-modal').addEventListener('click', (e) => {
         if (e.target.id === 'qr-modal') {
             document.getElementById('qr-modal').style.display = 'none';
@@ -304,15 +325,12 @@ export function updateUI() {
 
     if (btnQr) btnQr.disabled = flowerCount === 0;
 
-    // Aktualizacja liczników
     document.getElementById('flower-counter').textContent = `${flowerCount} / ${maxPositions}`;
     document.getElementById('available-text').textContent = `Dostępne miejsca: ${availableCount}`;
 
-    // Aktualizacja przycisków akcji
     document.getElementById('btn-remove').disabled = flowerCount === 0;
     document.getElementById('btn-clear').disabled = flowerCount === 0;
 
-    // Aktualizacja przycisków dodawania
     const addOneButtons = document.querySelectorAll('.btn-add-one');
     addOneButtons.forEach(btn => {
         btn.disabled = availableCount === 0;
