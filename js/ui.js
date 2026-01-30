@@ -20,6 +20,9 @@ import {
     setNullSelectedFlower,
     updateSelectionAfterReplace,
     onMouseDown,
+    onTouchStart,
+    onTouchMove,
+    onTouchEnd,
     unhighlightFlower,
     hideFlowerEditor
 } from './Raycaster.js';
@@ -108,35 +111,43 @@ function createFlowersList() {
  * Tworzy listę kwiatów w edytorze
  */
 export function initFlowerEditor() {
+    const canvasContainer = document.getElementById('canvas-container');
 
+    // Obsługa myszy - na całym dokumencie
     document.addEventListener('mousedown', onMouseDown);
+
+    // Obsługa dotyku dla urządzeń mobilnych - na kontenerze canvas
+    if (canvasContainer) {
+        canvasContainer.addEventListener('touchstart', onTouchStart, { passive: true });
+        canvasContainer.addEventListener('touchmove', onTouchMove, { passive: true });
+        canvasContainer.addEventListener('touchend', onTouchEnd, { passive: false });
+    }
 
     const closeBtn = document.getElementById('close-editor');
     closeBtn.addEventListener('click', () => {
         if (getSelectedFlower()) {
             unhighlightFlower(getSelectedFlower());
-            setNullSelectedFlower()
+            setNullSelectedFlower();
         }
         hideFlowerEditor();
     });
 
     const deleteBtn = document.getElementById('delete-flower');
     deleteBtn.addEventListener('click', (event) => {
-        event.stopPropagation(); // Zapobiega propagacji eventu
+        event.stopPropagation();
         if (getSelectedFlower()) {
             console.log('Usuwanie kwiatu:', getSelectedFlower());
-            // Wywołaj funkcję usuwania kwiatu
             if (window.deleteSelectedFlowerCallback) {
                 window.deleteSelectedFlowerCallback(getSelectedFlower());
             }
-            setNullSelectedFlower()
+            setNullSelectedFlower();
             hideFlowerEditor();
         } else {
             console.log('Brak wybranego kwiatu do usunięcia');
         }
     });
 
-    // --- NOWA OBSŁUGA POZYCJI I ROTACJI ---
+    // --- OBSŁUGA POZYCJI I ROTACJI ---
     const inputs = {
         posX: document.getElementById('pos-x'),
         posY: document.getElementById('pos-y'),
@@ -206,13 +217,12 @@ export function initFlowerEditor() {
         button.appendChild(nameSpan);
 
         button.addEventListener('click', async (event) => {
-            event.stopPropagation(); // Zapobiega propagacji eventu
+            event.stopPropagation();
             const selectedFlower = getSelectedFlower();
             if (selectedFlower) {
                 console.log('Zamiana kwiatu na:', flower.name);
                 const newFlower = await replaceFlower(selectedFlower, flower, scene);
                 if (newFlower) {
-                    // Zaktualizuj zaznaczenie na nowy kwiat
                     updateSelectionAfterReplace(newFlower);
                 }
                 updateUI();
@@ -239,10 +249,9 @@ function setupActionButtons() {
         updateUI();
         if (onFlowerChangeCallback) onFlowerChangeCallback();
     });
-    document.getElementById('btn-qr').addEventListener('click', () => {
-        // Pobieramy pełny link do strony z bukietem
-        const url = getBouquetUrl();
 
+    document.getElementById('btn-qr').addEventListener('click', () => {
+        const url = getBouquetUrl();
 
         if (getFlowersCount() === 0) {
             alert("Bukiet jest pusty!");
@@ -255,17 +264,15 @@ function setupActionButtons() {
 
         qrContainer.innerHTML = '';
 
-        // Generuj kod QR z LINKIEM (URL)
         new QRCode(qrContainer, {
-            text: url,             // Tu teraz jest link!
+            text: url,
             width: 256,
             height: 256,
-            colorDark : "#000000",
-            colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.L // Ważne: Low pozwala na dłuższe linki
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.L
         });
 
-        // Pod kodem wyświetl instrukcję
         textSummary.innerHTML = `
             <strong>Zeskanuj, aby otworzyć ten bukiet.</strong><br><br>
         `;
@@ -295,7 +302,7 @@ export function updateUI() {
     const availableCount = getAvailablePositionsCount();
     const btnQr = document.getElementById('btn-qr');
 
-    if(btnQr) btnQr.disabled = flowerCount === 0;
+    if (btnQr) btnQr.disabled = flowerCount === 0;
 
     // Aktualizacja liczników
     document.getElementById('flower-counter').textContent = `${flowerCount} / ${maxPositions}`;
