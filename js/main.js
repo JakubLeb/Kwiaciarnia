@@ -1,51 +1,66 @@
 // ============================================
 // GŁÓWNY PLIK APLIKACJI
+// Z nowym systemem space-aware placement
 // ============================================
 
-import { BOUQUET_RINGS_CONFIG, INCLUDE_CENTER_FLOWER } from './config.js';
+import { flowerTypes } from './config.js';
 import { initScene, startAnimation } from './scene.js';
 import { setupCameraControls } from './camera.js';
-import { generateFlowerPositions, initFlowers, loadBouquetFromUrl } from './flowers.js';
+import { initFlowers, loadBouquetFromUrl } from './flowers.js';
 import { initUI, updateUI, initFlowerEditor } from './ui.js';
+import { preloadAllModels, getBoundsStatistics } from './modelLoader.js';
 
 
 /**
  * Inicjalizacja aplikacji
  */
 window.addEventListener('DOMContentLoaded', async () => {
-    // 1. Generowanie pozycji kwiatów
-    const positions = generateFlowerPositions(BOUQUET_RINGS_CONFIG, INCLUDE_CENTER_FLOWER);
-    console.log(`Wygenerowano ${positions.length} pozycji dla kwiatów`);
+    console.log('🌸 Inicjalizacja Kreatora Bukietów (Space-Aware Placement)');
 
-    // 2. Inicjalizacja systemu kwiatów
-    initFlowers(positions);
-
-    // 3. Inicjalizacja sceny 3D
+    // 1. Inicjalizacja sceny 3D
     const { scene, camera, renderer } = initScene('canvas-container');
-    console.log('Scena 3D zainicjalizowana');
+    console.log('✓ Scena 3D zainicjalizowana');
 
-    // 4. Konfiguracja kontrolek kamery
+    // 2. Konfiguracja kontrolek kamery
     setupCameraControls(camera, renderer.domElement);
-    console.log('Kontrolki kamery skonfigurowane');
+    console.log('✓ Kontrolki kamery skonfigurowane');
+
+    // 3. Preładowanie modeli i obliczenie bounds
+    console.log('⏳ Preładowanie modeli kwiatów...');
+    await preloadAllModels(flowerTypes);
+
+    // Wyświetl statystyki bounds
+    const stats = getBoundsStatistics();
+    console.log('📊 Statystyki modeli:');
+    stats.models.forEach(m => {
+        console.log(`   ${m.id}: radius=${m.radiusXZ.toFixed(3)}, height=${m.height.toFixed(3)}`);
+    });
+    console.log(`   Min radius: ${stats.minRadius.toFixed(3)}, Max: ${stats.maxRadius.toFixed(3)}, Avg: ${stats.avgRadius.toFixed(3)}`);
+
+    // 4. Inicjalizacja systemu kwiatów (space-aware)
+    initFlowers();
+    console.log('✓ System kwiatów zainicjalizowany');
 
     // 5. Inicjalizacja interfejsu użytkownika
     initUI(scene, () => {
         console.log('Bukiet zaktualizowany');
     });
-    console.log('Interfejs użytkownika zainicjalizowany');
+    console.log('✓ Interfejs użytkownika zainicjalizowany');
 
     // 6. Inicjalizacja edytora kwiatów (raycaster + gizmo)
     initFlowerEditor();
-    console.log('Edytor kwiatów zainicjalizowany');
+    console.log('✓ Edytor kwiatów zainicjalizowany');
 
+    // 7. Wczytaj bukiet z URL (jeśli jest)
     await loadBouquetFromUrl(scene);
 
-    // 7. Start animacji
+    // 8. Start animacji
     startAnimation();
-    console.log('Animacja uruchomiona');
+    console.log('✓ Animacja uruchomiona');
 
-    // 8. Początkowa aktualizacja UI
+    // 9. Początkowa aktualizacja UI
     updateUI();
 
     console.log('✅ Aplikacja gotowa do użycia!');
+    console.log('ℹ️  Nowy system: kwiaty są rozmieszczane dynamicznie z uwzględnieniem ich rzeczywistych rozmiarów');
 });

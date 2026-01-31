@@ -1,55 +1,34 @@
 // ============================================
 // ZARZĄDZANIE KWIATAMI
+// Z space-aware placement (circle packing)
 // ============================================
 import { flowerTypes } from './config.js';
-import { getModelFromCache } from './modelLoader.js';
+import { getModelFromCache, getModelBounds, getCachedBounds } from './modelLoader.js';
+import {
+    findBestPosition,
+    registerPlacedFlower,
+    unregisterFlower,
+    updateFlowerPosition,
+    clearAllPlacedFlowers,
+    getPlacedCount,
+    estimateRemainingCapacity,
+    PLACEMENT_CONFIG
+} from './collision.js';
 
 let flowers = [];
-let availablePositions = [];
-let flowerPositions = [];
+let flowerIdCounter = 0;
 
 /**
- * Generuje pozycje kwiatów w układzie pierścieniowym
+ * Generuje unikalne ID dla kwiatu
  */
-export function generateFlowerPositions(ringsConfig, includeCenter) {
-    const positions = [];
-
-    if (includeCenter) {
-        positions.push({
-            x: 0,
-            z: 0,
-            y: 0,
-            tiltAngle: 0
-        });
-    }
-
-    for (const config of ringsConfig) {
-        const { count, radius, y, tilt, offset = 0 } = config;
-        const tiltInRadians = tilt * Math.PI / 180;
-
-        for (let i = 0; i < count; i++) {
-            const rotationAngle = (i / count) * Math.PI * 2 + offset;
-            const x = Math.cos(rotationAngle) * radius;
-            const z = Math.sin(rotationAngle) * radius;
-
-            positions.push({
-                x: x,
-                z: z,
-                y: y,
-                tiltAngle: tiltInRadians
-            });
-        }
-    }
-
-    return positions;
+function generateFlowerId() {
+    return `flower_${Date.now()}_${flowerIdCounter++}`;
 }
 
 /**
  * Tworzy proceduralny kwiat (fallback)
  */
-function createProceduralFlower(type, positionIndex) {
-    const position = flowerPositions[positionIndex];
-
+function createProceduralFlower(type, position) {
     const petalCount = 8;
     const petalGroup = new THREE.Group();
 
@@ -85,16 +64,25 @@ function createProceduralFlower(type, positionIndex) {
     flower.add(petalGroup);
     flower.add(stem);
 
+    applyPositionToFlower(flower, position);
+
+    return { flower, radius: 0.15 };
+}
+
+/**
+ * Aplikuje pozycję i rotację do kwiatu
+ */
+function applyPositionToFlower(flower, position) {
     flower.position.set(position.x, position.y, position.z);
 
+    // Obróć w kierunku centrum
     if (position.x !== 0 || position.z !== 0) {
         const angleToCenter = Math.atan2(position.x, position.z);
         flower.rotation.y = angleToCenter;
     }
 
+    // Przechyl na zewnątrz
     flower.rotateX(position.tiltAngle);
-
-    return flower;
 }
 
 /**
@@ -115,34 +103,82 @@ function cloneMaterials(object) {
 /**
  * Tworzy kwiat z modelu GLB
  */
-async function createFlowerFromGLB(type, positionIndex) {
-    const position = flowerPositions[positionIndex];
-
+async function createFlowerFromGLB(type, position, flowerId) {
     try {
-        const model = await getModelFromCache(type.id, type.modelUrl);
+        const { model, bounds } = await getModelFromCache(type.id, type.modelUrl);
 
         const flower = new THREE.Group();
         flower.add(model);
 
         cloneMaterials(flower);
 
-        flower.position.set(position.x, position.y, position.z);
-
-        if (position.x !== 0 || position.z !== 0) {
-            const angleToCenter = Math.atan2(position.x, position.z);
-            flower.rotation.y = angleToCenter;
-        }
-
-        flower.rotateX(position.tiltAngle);
+        applyPositionToFlower(flower, position);
 
         flower.userData.flowerType = type;
-        flower.userData.positionIndex = positionIndex;
+        flower.userData.flowerId = flowerId;
+        flower.userData.bounds = bounds;
+        flower.userData.placementPosition = { ...position };
 
-        return flower;
+        return { flower, radius: bounds.radiusXZ };
     } catch (error) {
         console.error('Błąd podczas tworzenia kwiatu z GLB:', error);
-        return createProceduralFlower(type, positionIndex);
+        const result = createProceduralFlower(type, position);
+        result.flower.userData.flowerType = type;
+        result.flower.userData.flowerId = flowerId;
+        return result;
     }
+}
+
+/**
+ * Inicjalizuje system kwiatów
+ * @param {Array} positions - Legacy: ignorowane w nowym systemie
+ */
+export function initFlowers(positions = []) {
+    flowers = [];
+    flowerIdCounter = 0;
+    clearAllPlacedFlowers();
+    console.log('System kwiatów zainicjalizowany (space-aware placement)');
+}
+
+/**
+ * Dodaje pojedynczy kwiat do sceny
+ * Używa space-aware placement do znalezienia pozycji
+ */
+export async function addFlower(type, scene) {
+    // Pobierz bounds dla typu kwiatu
+    const bounds = await getModelBounds(type.id, type.modelUrl);
+    const radius = bounds.radiusXZ;
+
+    // Znajdź najlepszą pozycję (findBestPosition sam skaluje radius)
+    const position = findBestPosition(radius);
+
+    if (!position) {
+        console.warn(`Nie można znaleźć miejsca dla kwiatu ${type.name} (radius: ${radius.toFixed(3)})`);
+        return null;
+    }
+
+    const flowerId = generateFlowerId();
+
+    // Stwórz kwiat
+    const { flower } = await createFlowerFromGLB(type, position, flowerId);
+
+    // Dodaj do sceny
+    scene.add(flower);
+
+    // Zarejestruj w systemie kolizji - position.radius to już scaled radius
+    registerPlacedFlower(position.x, position.z, position.radius, flowerId);
+
+    // Zapisz w lokalnej tablicy
+    flowers.push({
+        mesh: flower,
+        flowerId,
+        radius: position.radius,
+        position: { ...position }
+    });
+
+    console.log(`Dodano kwiat ${type.name} na pozycji (${position.x.toFixed(2)}, ${position.z.toFixed(2)}), radius: ${position.radius.toFixed(3)}`);
+
+    return flower;
 }
 
 /**
@@ -155,44 +191,44 @@ export async function replaceFlower(oldFlowerMesh, newFlowerType, scene) {
         return null;
     }
 
-    const positionIndex = flowers[flowerIndex].positionIndex;
+    const oldFlower = flowers[flowerIndex];
+    const oldPosition = oldFlower.position;
+    const oldFlowerId = oldFlower.flowerId;
 
+    // Usuń stary kwiat z systemu kolizji
+    unregisterFlower(oldFlowerId);
+
+    // Pobierz bounds nowego typu
+    const newBounds = await getModelBounds(newFlowerType.id, newFlowerType.modelUrl);
+    const newRadius = newBounds.radiusXZ * PLACEMENT_CONFIG.radiusScale;
+
+    // Użyj tej samej pozycji
+    let newPosition = { ...oldPosition, radius: newRadius };
+
+    // Usuń stary kwiat ze sceny
     scene.remove(oldFlowerMesh);
 
-    const newFlower = await createFlowerFromGLB(newFlowerType, positionIndex);
+    // Stwórz nowy kwiat
+    const newFlowerId = generateFlowerId();
+    const { flower: newFlower } = await createFlowerFromGLB(newFlowerType, newPosition, newFlowerId);
 
+    // Dodaj do sceny
     scene.add(newFlower);
 
-    flowers[flowerIndex].mesh = newFlower;
+    // Zarejestruj nowy kwiat
+    registerPlacedFlower(newPosition.x, newPosition.z, newRadius, newFlowerId);
+
+    // Zaktualizuj tablicę
+    flowers[flowerIndex] = {
+        mesh: newFlower,
+        flowerId: newFlowerId,
+        radius: newRadius,
+        position: newPosition
+    };
 
     console.log(`Zamieniono kwiat na ${newFlowerType.name}`);
 
     return newFlower;
-}
-
-/**
- * Inicjalizuje system kwiatów
- */
-export function initFlowers(positions) {
-    flowerPositions = positions;
-    availablePositions = Array.from({ length: positions.length }, (_, i) => i);
-    flowers = [];
-}
-
-/**
- * Dodaje pojedynczy kwiat do sceny
- */
-export async function addFlower(type, scene) {
-    if (availablePositions.length === 0) return null;
-
-    const positionIndex = availablePositions[0];
-    const flower = await createFlowerFromGLB(type, positionIndex);
-
-    scene.add(flower);
-    flowers.push({ mesh: flower, positionIndex });
-    availablePositions.shift();
-
-    return flower;
 }
 
 /**
@@ -207,14 +243,16 @@ export function deleteFlower(flowerMesh, scene) {
 
     const flower = flowers[flowerIndex];
 
+    // Usuń ze sceny
     scene.remove(flowerMesh);
 
-    availablePositions.unshift(flower.positionIndex);
-    availablePositions.sort((a, b) => a - b);
+    // Usuń z systemu kolizji
+    unregisterFlower(flower.flowerId);
 
+    // Usuń z tablicy
     flowers.splice(flowerIndex, 1);
 
-    console.log(`Usunięto kwiat z pozycji ${flower.positionIndex}`);
+    console.log(`Usunięto kwiat ${flower.flowerId}`);
     return true;
 }
 
@@ -226,7 +264,7 @@ export function removeLastFlower(scene) {
 
     const lastFlower = flowers.pop();
     scene.remove(lastFlower.mesh);
-    availablePositions.unshift(lastFlower.positionIndex);
+    unregisterFlower(lastFlower.flowerId);
 
     return lastFlower;
 }
@@ -239,11 +277,13 @@ export function clearAllFlowers(scene) {
         scene.remove(flower.mesh);
     });
     flowers = [];
-    availablePositions = Array.from({ length: flowerPositions.length }, (_, i) => i);
+    clearAllPlacedFlowers();
+    console.log('Wyczyszczono wszystkie kwiaty');
 }
 
 /**
- * Generuje pełny bukiet
+ * Generuje pełny bukiet z jednego typu kwiatu
+ * Używa circle packing do optymalnego rozmieszczenia
  */
 export async function generateFullBouquet(flowerType, scene) {
     clearAllFlowers(scene);
@@ -253,20 +293,32 @@ export async function generateFullBouquet(flowerType, scene) {
         return;
     }
 
-    await createFlowerFromGLB(flowerType, 0);
-    console.log(`Model dla ${flowerType.name} jest gotowy w cache.`);
+    // Pobierz bounds
+    const bounds = await getModelBounds(flowerType.id, flowerType.modelUrl);
+    const radius = bounds.radiusXZ;
 
-    const totalPositions = flowerPositions.length;
-    console.log(`Generowanie ${totalPositions} instancji kwiatów...`);
+    console.log(`Generowanie bukietu z ${flowerType.name} (radius: ${radius.toFixed(3)})...`);
 
-    for (let i = 0; i < totalPositions; i++) {
-        const flower = await createFlowerFromGLB(flowerType, i);
-        scene.add(flower);
-        flowers.push({ mesh: flower, positionIndex: i });
-        availablePositions.shift();
+    // Dodawaj kwiaty dopóki jest miejsce
+    let addedCount = 0;
+    let failedAttempts = 0;
+    const maxFailedAttempts = 5;
+
+    while (failedAttempts < maxFailedAttempts) {
+        const flower = await addFlower(flowerType, scene);
+
+        if (flower) {
+            addedCount++;
+            failedAttempts = 0;
+        } else {
+            failedAttempts++;
+        }
+
+        // Bezpiecznik - maksymalna liczba kwiatów
+        if (addedCount >= 50) break;
     }
 
-    console.log("Bukiet pomyślnie wygenerowany.");
+    console.log(`Wygenerowano bukiet z ${addedCount} kwiatami ${flowerType.name}`);
 }
 
 /**
@@ -279,9 +331,17 @@ export function getBouquetUrl() {
         return url.toString();
     }
 
+    // Format: [typeIndex, x, z, y, tilt] dla każdego kwiatu
     const bouquetData = flowers.map(f => {
         const typeIndex = flowerTypes.findIndex(t => t.id === f.mesh.userData.flowerType.id);
-        return [f.positionIndex, typeIndex];
+        const pos = f.position;
+        return [
+            typeIndex,
+            Math.round(pos.x * 1000) / 1000,
+            Math.round(pos.z * 1000) / 1000,
+            Math.round(pos.y * 1000) / 1000,
+            Math.round(pos.tiltAngle * 1000) / 1000
+        ];
     });
 
     const jsonString = JSON.stringify(bouquetData);
@@ -293,6 +353,9 @@ export function getBouquetUrl() {
     return url.toString();
 }
 
+/**
+ * Wczytuje bukiet z URL
+ */
 export async function loadBouquetFromUrl(scene) {
     const params = new URLSearchParams(window.location.search);
     const encodedData = params.get('b');
@@ -307,24 +370,69 @@ export async function loadBouquetFromUrl(scene) {
         clearAllFlowers(scene);
 
         for (const item of bouquetData) {
-            const positionIndex = item[0];
-            const typeIndex = item[1];
+            let typeIndex, x, z, y, tiltAngle;
+
+            // Obsługa starego formatu [positionIndex, typeIndex]
+            if (item.length === 2) {
+                // Stary format - konwertuj na nowy
+                typeIndex = item[1];
+                const type = flowerTypes[typeIndex];
+                if (type) {
+                    await addFlower(type, scene);
+                }
+                continue;
+            }
+
+            // Nowy format [typeIndex, x, z, y, tilt]
+            [typeIndex, x, z, y, tiltAngle] = item;
 
             const type = flowerTypes[typeIndex];
+            if (!type) continue;
 
-            if (type) {
-                const flower = await createFlowerFromGLB(type, positionIndex);
-                scene.add(flower);
-                flowers.push({ mesh: flower, positionIndex: positionIndex });
-                availablePositions = availablePositions.filter(pos => pos !== positionIndex);
-            }
+            const bounds = await getModelBounds(type.id, type.modelUrl);
+            const radius = bounds.radiusXZ;
+
+            const position = { x, z, y, tiltAngle, radius };
+            const flowerId = generateFlowerId();
+
+            const { flower } = await createFlowerFromGLB(type, position, flowerId);
+            scene.add(flower);
+
+            registerPlacedFlower(x, z, radius, flowerId);
+
+            flowers.push({
+                mesh: flower,
+                flowerId,
+                radius,
+                position
+            });
         }
 
-        console.log("Wczytano bukiet z URL.");
+        console.log(`Wczytano bukiet z ${flowers.length} kwiatami z URL.`);
 
     } catch (error) {
         console.error("Błąd podczas wczytywania bukietu z URL:", error);
     }
+}
+
+/**
+ * Aktualizuje pozycję kwiatu po edycji w gizmo
+ * @param {THREE.Object3D} flowerMesh
+ */
+export function syncFlowerPositionAfterEdit(flowerMesh) {
+    const flowerData = flowers.find(f => f.mesh === flowerMesh);
+    if (!flowerData) return;
+
+    const newX = flowerMesh.position.x;
+    const newZ = flowerMesh.position.z;
+
+    // Aktualizuj w systemie kolizji
+    updateFlowerPosition(flowerData.flowerId, newX, newZ);
+
+    // Aktualizuj lokalną pozycję
+    flowerData.position.x = newX;
+    flowerData.position.z = newZ;
+    flowerData.position.y = flowerMesh.position.y;
 }
 
 /**
@@ -335,9 +443,31 @@ export function getFlowersCount() {
 }
 
 export function getAvailablePositionsCount() {
-    return availablePositions.length;
+    // Szacuj ile jeszcze kwiatów zmieści się
+    const avgRadius = flowers.length > 0
+        ? flowers.reduce((sum, f) => sum + f.radius, 0) / flowers.length
+        : PLACEMENT_CONFIG.defaultRadius;
+
+    return estimateRemainingCapacity(avgRadius);
 }
 
 export function getTotalPositions() {
-    return flowerPositions.length;
+    // Szacowana maksymalna pojemność
+    const avgRadius = 0.08;
+    const totalArea = Math.PI * PLACEMENT_CONFIG.bouquetRadius * PLACEMENT_CONFIG.bouquetRadius;
+    const avgFlowerArea = Math.PI * avgRadius * avgRadius;
+    return Math.floor(totalArea * 0.6 / avgFlowerArea);
+}
+
+// ============================================
+// LEGACY SUPPORT
+// ============================================
+
+/**
+ * Legacy: Generuje pozycje kwiatów (dla kompatybilności)
+ * W nowym systemie nie używamy stałych pozycji
+ */
+export function generateFlowerPositions(ringsConfig, includeCenter) {
+    console.log('generateFlowerPositions: Legacy function, pozycje są teraz generowane dynamicznie');
+    return [];
 }
