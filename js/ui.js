@@ -1,5 +1,6 @@
 // ============================================
 // INTERFEJS UŻYTKOWNIKA
+// Z obsługą space-aware placement
 // ============================================
 
 import { flowerTypes } from './config.js';
@@ -13,7 +14,8 @@ import {
     getTotalPositions,
     replaceFlower,
     deleteFlower,
-    getBouquetUrl
+    getBouquetUrl,
+    syncFlowerPositionAfterEdit
 } from './flowers.js';
 import {
     getSelectedFlower,
@@ -91,7 +93,14 @@ function createFlowersList() {
         btnAddOne.className = 'flower-action-button btn-add-one';
         btnAddOne.textContent = '➕';
         btnAddOne.addEventListener('click', async () => {
-            await addFlower(flower, scene);
+            btnAddOne.disabled = true;
+            const result = await addFlower(flower, scene);
+
+            if (!result) {
+                // Pokaż informację że nie ma miejsca
+                showTemporaryMessage('Brak miejsca w bukiecie!', 'warning');
+            }
+
             updateUI();
             if (onFlowerChangeCallback) onFlowerChangeCallback();
         });
@@ -100,6 +109,7 @@ function createFlowersList() {
         btnAddBouquet.className = 'flower-action-button btn-add-bouquet';
         btnAddBouquet.textContent = '💐';
         btnAddBouquet.addEventListener('click', async () => {
+            btnAddBouquet.disabled = true;
             await generateFullBouquet(flower, scene);
             updateUI();
             if (onFlowerChangeCallback) onFlowerChangeCallback();
@@ -109,6 +119,55 @@ function createFlowersList() {
         container.appendChild(btnAddBouquet);
         flowersList.appendChild(container);
     });
+}
+
+/**
+ * Pokazuje tymczasową wiadomość
+ */
+function showTemporaryMessage(text, type = 'info') {
+    // Sprawdź czy już istnieje
+    let msgEl = document.getElementById('temp-message');
+    if (!msgEl) {
+        msgEl = document.createElement('div');
+        msgEl.id = 'temp-message';
+        msgEl.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            z-index: 9999;
+            animation: fadeInOut 2s ease-in-out forwards;
+        `;
+        document.body.appendChild(msgEl);
+
+        // Dodaj animację
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInOut {
+                0% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+                15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    msgEl.textContent = text;
+    msgEl.style.background = type === 'warning' ? '#f59e0b' : '#3b82f6';
+    msgEl.style.color = 'white';
+    msgEl.style.animation = 'none';
+    msgEl.offsetHeight; // Reflow
+    msgEl.style.animation = 'fadeInOut 2s ease-in-out forwards';
+
+    setTimeout(() => {
+        if (msgEl.parentNode) {
+            msgEl.parentNode.removeChild(msgEl);
+        }
+    }, 2000);
 }
 
 /**
@@ -150,13 +209,27 @@ export function initFlowerEditor() {
     // Obsługa myszy
     document.addEventListener('mousedown', onMouseDown);
     document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
+    document.addEventListener('mouseup', (event) => {
+        onMouseUp(event);
+        // Synchronizuj pozycję po zakończeniu edycji
+        const selected = getSelectedFlower();
+        if (selected) {
+            syncFlowerPositionAfterEdit(selected);
+        }
+    });
 
     // Obsługa dotyku
     if (canvasContainer) {
         canvasContainer.addEventListener('touchstart', onTouchStart, { passive: false });
         canvasContainer.addEventListener('touchmove', onTouchMove, { passive: false });
-        canvasContainer.addEventListener('touchend', onTouchEnd, { passive: false });
+        canvasContainer.addEventListener('touchend', (event) => {
+            onTouchEnd(event);
+            // Synchronizuj pozycję po zakończeniu edycji
+            const selected = getSelectedFlower();
+            if (selected) {
+                syncFlowerPositionAfterEdit(selected);
+            }
+        }, { passive: false });
     }
 
     // Przycisk zamknięcia edytora
@@ -319,20 +392,28 @@ function setupActionButtons() {
  */
 export function updateUI() {
     const flowerCount = getFlowersCount();
-    const maxPositions = getTotalPositions();
     const availableCount = getAvailablePositionsCount();
+    const maxPositions = getTotalPositions();
     const btnQr = document.getElementById('btn-qr');
 
     if (btnQr) btnQr.disabled = flowerCount === 0;
 
-    document.getElementById('flower-counter').textContent = `${flowerCount} / ${maxPositions}`;
-    document.getElementById('available-text').textContent = `Dostępne miejsca: ${availableCount}`;
+    // Pokaż aktualną liczbę i szacowaną pojemność
+    document.getElementById('flower-counter').textContent = `${flowerCount} / ~${maxPositions}`;
+    document.getElementById('available-text').textContent = `Szacowane wolne miejsca: ~${availableCount}`;
 
     document.getElementById('btn-remove').disabled = flowerCount === 0;
     document.getElementById('btn-clear').disabled = flowerCount === 0;
 
+    // Przyciski dodawania - wyłącz jeśli mało miejsca
     const addOneButtons = document.querySelectorAll('.btn-add-one');
     addOneButtons.forEach(btn => {
-        btn.disabled = availableCount === 0;
+        btn.disabled = availableCount <= 0;
+    });
+
+    // Przyciski pełnego bukietu zawsze dostępne (czyszczą poprzedni)
+    const addBouquetButtons = document.querySelectorAll('.btn-add-bouquet');
+    addBouquetButtons.forEach(btn => {
+        btn.disabled = false;
     });
 }

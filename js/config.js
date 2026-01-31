@@ -12,6 +12,10 @@ export const flowerTypes = [
     { id: 'Chryzantema', name: 'Chryzantema', modelUrl: "models/Chryzantema.glb", color: 0xFDFDD0 },
 ];
 
+// ============================================
+// LEGACY CONFIG - zachowane dla kompatybilności
+// Nowy system używa PLACEMENT_CONFIG z collision.js
+// ============================================
 export const BOUQUET_RINGS_CONFIG = [
     { count: 4, radius: 0.1, y: -0.05, tilt: 15 },
     { count: 8, radius: 0.2, y: -0.1, tilt: 30 },
@@ -38,4 +42,21 @@ export const CAMERA_CONTROLS_CONFIG = {
     defaultDistance: 6,
     rotationSpeed: 0.01,
     zoomSpeed: 0.01
+};
+
+// ============================================
+// NOWA KONFIGURACJA SPACE-AWARE PLACEMENT
+// Te wartości można nadpisać importując PLACEMENT_CONFIG z collision.js
+// ============================================
+export const BOUQUET_CONFIG = {
+    // Promień całego bukietu
+    bouquetRadius: 0.45,
+    // Minimalny odstęp między kwiatami
+    padding: 0.02,
+    // Maksymalna liczba prób znalezienia miejsca
+    maxPlacementAttempts: 100,
+    // Współczynnik skalowania promienia z bounding box
+    // Zmniejsz jeśli kwiaty są zbyt daleko od siebie
+    // Zwiększ jeśli nachodzą na siebie
+    radiusScale: 1.0
 };
