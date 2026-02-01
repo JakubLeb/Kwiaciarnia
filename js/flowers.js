@@ -442,6 +442,13 @@ export function getFlowersCount() {
     return flowers.length;
 }
 
+/**
+ * Zwraca listę wszystkich kwiatów
+ */
+export function getFlowersList() {
+    return [...flowers];
+}
+
 export function getAvailablePositionsCount() {
     // Szacuj ile jeszcze kwiatów zmieści się
     const avgRadius = flowers.length > 0

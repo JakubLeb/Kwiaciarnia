@@ -15,7 +15,8 @@ import {
     replaceFlower,
     deleteFlower,
     getBouquetUrl,
-    syncFlowerPositionAfterEdit
+    syncFlowerPositionAfterEdit,
+    getFlowersList
 } from './flowers.js';
 import {
     getSelectedFlower,
@@ -388,6 +389,70 @@ function setupActionButtons() {
 }
 
 /**
+ * Zlicza kwiaty według typu
+ */
+function countFlowersByType() {
+    const flowersList = getFlowersList();
+    const counts = {};
+
+    flowersList.forEach(flower => {
+        const typeId = flower.mesh.userData.flowerType?.id;
+        if (typeId) {
+            counts[typeId] = (counts[typeId] || 0) + 1;
+        }
+    });
+
+    return counts;
+}
+
+/**
+ * Aktualizuje listę kwiatów w bukiecie
+ */
+function updateBouquetContentList() {
+    const container = document.getElementById('bouquet-content-list');
+    if (!container) return;
+
+    const counts = countFlowersByType();
+    const hasFlowers = Object.keys(counts).length > 0;
+
+    if (!hasFlowers) {
+        container.innerHTML = '<p class="empty-bouquet-text">Bukiet jest pusty</p>';
+        return;
+    }
+
+    container.innerHTML = '';
+
+    // Sortuj według liczby (malejąco)
+    const sortedTypes = Object.entries(counts)
+        .sort((a, b) => b[1] - a[1]);
+
+    sortedTypes.forEach(([typeId, count]) => {
+        const flowerType = flowerTypes.find(f => f.id === typeId);
+        if (!flowerType) return;
+
+        const item = document.createElement('div');
+        item.className = 'bouquet-content-item';
+
+        const colorDiv = document.createElement('div');
+        colorDiv.className = 'bouquet-item-color';
+        colorDiv.style.backgroundColor = `#${flowerType.color.toString(16).padStart(6, '0')}`;
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'bouquet-item-name';
+        nameSpan.textContent = flowerType.name;
+
+        const countSpan = document.createElement('span');
+        countSpan.className = 'bouquet-item-count';
+        countSpan.textContent = `×${count}`;
+
+        item.appendChild(colorDiv);
+        item.appendChild(nameSpan);
+        item.appendChild(countSpan);
+        container.appendChild(item);
+    });
+}
+
+/**
  * Aktualizuje stan interfejsu
  */
 export function updateUI() {
@@ -416,4 +481,7 @@ export function updateUI() {
     addBouquetButtons.forEach(btn => {
         btn.disabled = false;
     });
+
+    // Aktualizuj listę zawartości bukietu
+    updateBouquetContentList();
 }
