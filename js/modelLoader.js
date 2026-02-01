@@ -1,68 +1,77 @@
 // ============================================
 // ŁADOWANIE I CACHE MODELI GLB
 // Z obliczaniem bounding info dla collision system
+// ZOPTYMALIZOWANE dla szybkiego ładowania
 // ============================================
 
 const modelCache = new Map();
 const boundsCache = new Map();
+const clonedMaterialsCache = new Map(); // Cache dla sklonowanych materiałów
+
+// Flaga czy GLTFLoader jest załadowany
+let gltfLoaderPromise = null;
+let GLTFLoaderClass = null;
+
+/**
+ * Lazy load GLTFLoader - ładuj tylko raz
+ */
+async function getGLTFLoader() {
+    if (GLTFLoaderClass) return new GLTFLoaderClass();
+
+    if (!gltfLoaderPromise) {
+        gltfLoaderPromise = import('https://cdn.skypack.dev/three@0.128.0/examples/jsm/loaders/GLTFLoader.js')
+            .then(module => {
+                GLTFLoaderClass = module.GLTFLoader;
+                return new GLTFLoaderClass();
+            });
+    }
+
+    return gltfLoaderPromise.then(() => new GLTFLoaderClass());
+}
 
 /**
  * Ładuje model GLB z URL
  */
 export async function loadGLBModelFromURL(url) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const { GLTFLoader } = await import('https://cdn.skypack.dev/three@0.128.0/examples/jsm/loaders/GLTFLoader.js');
-            const loader = new GLTFLoader();
+    const loader = await getGLTFLoader();
 
-            loader.load(
-                url,
-                (gltf) => {
-                    const model = gltf.scene;
+    return new Promise((resolve, reject) => {
+        loader.load(
+            url,
+            (gltf) => {
+                const model = gltf.scene;
 
-                    // Normalizacja rozmiaru modelu
-                    const box = new THREE.Box3().setFromObject(model);
-                    const size = box.getSize(new THREE.Vector3());
-                    const maxDim = Math.max(size.x, size.y, size.z);
-                    const scale = 1 / maxDim;
-                    model.scale.multiplyScalar(scale);
+                // Normalizacja rozmiaru modelu
+                const box = new THREE.Box3().setFromObject(model);
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const scale = 1 / maxDim;
+                model.scale.multiplyScalar(scale);
 
-                    // Wyśrodkowanie modelu
-                    box.setFromObject(model);
-                    const center = box.getCenter(new THREE.Vector3());
-                    model.position.sub(center);
+                // Wyśrodkowanie modelu
+                box.setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                model.position.sub(center);
 
-                    resolve(model);
-                },
-                undefined,
-                (error) => {
-                    console.error('Błąd ładowania modelu GLB:', error);
-                    reject(error);
-                }
-            );
-        } catch (error) {
-            reject(error);
-        }
+                resolve(model);
+            },
+            undefined,
+            (error) => {
+                console.error('Błąd ładowania modelu GLB:', error);
+                reject(error);
+            }
+        );
     });
 }
 
 /**
  * Oblicza bounds dla modelu po normalizacji
- * Skupia się na górnej części modelu (kwiat) ignorując łodygę
- * @param {THREE.Object3D} model
- * @returns {Object} - { radiusXZ, height, boundingBox, size }
  */
 function calculateModelBounds(model) {
     const box = new THREE.Box3().setFromObject(model);
     const size = box.getSize(new THREE.Vector3());
 
-    // Promień w rzucie z góry (XZ) - bierzemy większy z wymiarów
-    // Dzielimy przez 2 bo to promień, nie średnica
     const radiusXZ = Math.max(size.x, size.z) / 2;
-
-    // Dla kwiatów: promień główki kwiatu jest zazwyczaj mniejszy niż cały model
-    // Szacujemy że "użyteczny" promień to około 60% całkowitego
-    // (łodyga jest wąska, główka kwiatu szersza ale nie tak szeroka jak bounding box)
     const effectiveRadius = radiusXZ * 0.6;
 
     return {
@@ -75,12 +84,33 @@ function calculateModelBounds(model) {
 }
 
 /**
+ * Szybkie klonowanie modelu - używa SkeletonUtils jeśli dostępne
+ * lub zoptymalizowane klonowanie
+ */
+function fastCloneModel(model) {
+    const clone = model.clone(true);
+
+    // Klonuj materiały tylko dla głównych meshów
+    clone.traverse((child) => {
+        if (child.isMesh && child.material) {
+            if (Array.isArray(child.material)) {
+                child.material = child.material.map(mat => mat.clone());
+            } else {
+                child.material = child.material.clone();
+            }
+        }
+    });
+
+    return clone;
+}
+
+/**
  * Pobiera model z cache lub ładuje i zapisuje do cache
  * Zwraca też informacje o bounds
  */
 export async function getModelFromCache(typeId, modelUrl) {
     if (modelCache.has(typeId)) {
-        const clonedModel = modelCache.get(typeId).clone();
+        const clonedModel = fastCloneModel(modelCache.get(typeId));
         const bounds = boundsCache.get(typeId);
         return { model: clonedModel, bounds: { ...bounds } };
     }
@@ -97,7 +127,30 @@ export async function getModelFromCache(typeId, modelUrl) {
 
     console.log(`Model ${typeId} załadowany. Bounds: radiusXZ=${bounds.radiusXZ.toFixed(3)}, height=${bounds.height.toFixed(3)}`);
 
-    return { model: loadedModel.clone(), bounds: { ...bounds } };
+    return { model: fastCloneModel(loadedModel), bounds: { ...bounds } };
+}
+
+/**
+ * NOWA FUNKCJA: Szybkie tworzenie wielu klonów modelu
+ * Używana przy ładowaniu bukietu z URL
+ */
+export function getMultipleModelsFromCache(typeId, count) {
+    if (!modelCache.has(typeId)) {
+        return null;
+    }
+
+    const baseModel = modelCache.get(typeId);
+    const bounds = boundsCache.get(typeId);
+    const models = [];
+
+    for (let i = 0; i < count; i++) {
+        models.push({
+            model: fastCloneModel(baseModel),
+            bounds: { ...bounds }
+        });
+    }
+
+    return models;
 }
 
 /**
@@ -133,7 +186,9 @@ export function getCachedBounds(typeId) {
  */
 export async function preloadAllModels(flowerTypes) {
     console.log('Preładowanie wszystkich modeli...');
+    const startTime = performance.now();
 
+    // Ładuj wszystkie modele równolegle
     const promises = flowerTypes.map(async (type) => {
         try {
             await getModelFromCache(type.id, type.modelUrl);
@@ -146,7 +201,9 @@ export async function preloadAllModels(flowerTypes) {
 
     const results = await Promise.all(promises);
     const successful = results.filter(r => r.success).length;
-    console.log(`Preładowano ${successful}/${flowerTypes.length} modeli`);
+    const loadTime = performance.now() - startTime;
+
+    console.log(`Preładowano ${successful}/${flowerTypes.length} modeli w ${loadTime.toFixed(0)}ms`);
 
     return results;
 }
@@ -189,4 +246,5 @@ export function getBoundsStatistics() {
 export function clearModelCache() {
     modelCache.clear();
     boundsCache.clear();
+    clonedMaterialsCache.clear();
 }

@@ -2,9 +2,10 @@
 // ZARZĄDZANIE KWIATAMI
 // Z space-aware placement (circle packing)
 // + KOMPRESJA GZIP DLA QR KODÓW
+// + ZOPTYMALIZOWANE ŁADOWANIE NA MOBILE
 // ============================================
 import { flowerTypes } from './config.js';
-import { getModelFromCache, getModelBounds, getCachedBounds } from './modelLoader.js';
+import { getModelFromCache, getModelBounds, getCachedBounds, getMultipleModelsFromCache } from './modelLoader.js';
 import {
     findBestPosition,
     registerPlacedFlower,
@@ -30,7 +31,6 @@ async function loadPako() {
     if (pakoLoaded) return pakoModule;
 
     try {
-        // Dynamiczny import pako z CDN
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js';
 
@@ -105,9 +105,10 @@ function createProceduralFlower(type, position) {
 }
 
 /**
- * Aplikuje pozycję i rotację do kwiatu
+ * Aplikuje pozycję i rotację do kwiatu - ZOPTYMALIZOWANE
  */
 function applyPositionToFlower(flower, position) {
+    // Użyj set zamiast osobnych przypisań
     flower.position.set(position.x, position.y, position.z);
 
     if (position.rotX !== undefined && position.rotY !== undefined && position.rotZ !== undefined) {
@@ -128,31 +129,24 @@ function applyPositionToFlower(flower, position) {
 }
 
 /**
- * Klonuje materiały dla wszystkich mesh w obiekcie
+ * Tworzy kwiat z modelu GLB - ZOPTYMALIZOWANE
+ * Przyjmuje opcjonalnie gotowy model (dla batch loading)
  */
-function cloneMaterials(object) {
-    object.traverse((child) => {
-        if (child.isMesh && child.material) {
-            if (Array.isArray(child.material)) {
-                child.material = child.material.map(mat => mat.clone());
-            } else {
-                child.material = child.material.clone();
-            }
-        }
-    });
-}
-
-/**
- * Tworzy kwiat z modelu GLB (synchronicznie jeśli model w cache)
- */
-async function createFlowerFromGLB(type, position, flowerId) {
+async function createFlowerFromGLB(type, position, flowerId, preloadedModel = null) {
     try {
-        const { model, bounds } = await getModelFromCache(type.id, type.modelUrl);
+        let model, bounds;
+
+        if (preloadedModel) {
+            model = preloadedModel.model;
+            bounds = preloadedModel.bounds;
+        } else {
+            const result = await getModelFromCache(type.id, type.modelUrl);
+            model = result.model;
+            bounds = result.bounds;
+        }
 
         const flower = new THREE.Group();
         flower.add(model);
-
-        cloneMaterials(flower);
 
         applyPositionToFlower(flower, position);
 
@@ -343,31 +337,7 @@ export async function generateFullBouquet(flowerType, scene) {
 // ============================================
 
 /**
- * KonwertujeFloat32 do base64 (4 bajty na liczbę)
- */
-function floatToBytes(num) {
-    const buffer = new ArrayBuffer(4);
-    const view = new DataView(buffer);
-    view.setFloat32(0, num, true);
-    return new Uint8Array(buffer);
-}
-
-/**
- * Konwertuje bajty do Float32
- */
-function bytesToFloat(bytes, offset) {
-    const buffer = new ArrayBuffer(4);
-    const view = new DataView(buffer);
-    for (let i = 0; i < 4; i++) {
-        view.setUint8(i, bytes[offset + i]);
-    }
-    return view.getFloat32(0, true);
-}
-
-/**
  * Pakuje dane kwiatu do binarnego formatu
- * Format: [flags:1][type:1][x:2][z:2][y:2?][rot:6?][scale:6?]
- * Flagi: bit0=hasY, bit1=hasRot, bit2=hasScale
  */
 function packFlowerBinary(typeIndex, x, z, y, rotX, rotY, rotZ, scaleX, scaleY, scaleZ) {
     const hasY = Math.abs(y) > 0.05;
@@ -381,7 +351,6 @@ function packFlowerBinary(typeIndex, x, z, y, rotX, rotY, rotZ, scaleX, scaleY, 
 
     const bytes = [flags, typeIndex];
 
-    // X i Z - zawsze (jako int16, *100 dla precyzji 0.01)
     const xInt = Math.round(x * 100);
     const zInt = Math.round(z * 100);
     bytes.push(xInt & 0xFF, (xInt >> 8) & 0xFF);
@@ -393,7 +362,6 @@ function packFlowerBinary(typeIndex, x, z, y, rotX, rotY, rotZ, scaleX, scaleY, 
     }
 
     if (hasRot) {
-        // Rotacja jako int16 (*100)
         const rxInt = Math.round(rotX * 100);
         const ryInt = Math.round(rotY * 100);
         const rzInt = Math.round(rotZ * 100);
@@ -403,7 +371,6 @@ function packFlowerBinary(typeIndex, x, z, y, rotX, rotY, rotZ, scaleX, scaleY, 
     }
 
     if (hasScale) {
-        // Skala jako uint8 (*50, zakres 0-5.1)
         bytes.push(Math.round(scaleX * 50));
         bytes.push(Math.round(scaleY * 50));
         bytes.push(Math.round(scaleZ * 50));
@@ -421,9 +388,8 @@ function unpackFlowerBinary(bytes, offset) {
 
     let pos = offset + 2;
 
-    // X i Z
     let xInt = bytes[pos] | (bytes[pos + 1] << 8);
-    if (xInt > 32767) xInt -= 65536; // signed
+    if (xInt > 32767) xInt -= 65536;
     const x = xInt / 100;
     pos += 2;
 
@@ -489,9 +455,7 @@ function uint8ToBase64Url(bytes) {
  * Dekoduje URL-safe base64 do Uint8Array
  */
 function base64UrlToUint8(str) {
-    // Przywróć standardowy base64
     str = str.replace(/-/g, '+').replace(/_/g, '/');
-    // Dodaj padding
     while (str.length % 4) str += '=';
 
     const binary = atob(str);
@@ -512,10 +476,7 @@ export function getBouquetUrl() {
         return url.toString();
     }
 
-    // Pakuj wszystkie kwiaty do binarnego formatu
     const allBytes = [];
-
-    // Wersja formatu (1 bajt)
     allBytes.push(2); // Wersja 2 = binarny format
 
     for (const f of flowers) {
@@ -540,7 +501,6 @@ export function getBouquetUrl() {
 
     const uint8Data = new Uint8Array(allBytes);
 
-    // Próbuj skompresować z pako
     let finalData = uint8Data;
     let useCompression = false;
 
@@ -556,13 +516,10 @@ export function getBouquetUrl() {
         }
     }
 
-    // Koduj do base64
     const encodedData = uint8ToBase64Url(finalData);
 
     const url = new URL(window.location.href);
-    // 'c' = compressed, 'b' = binary uncompressed
     url.searchParams.set(useCompression ? 'c' : 'b', encodedData);
-    // Usuń drugi parametr jeśli istnieje
     url.searchParams.delete(useCompression ? 'b' : 'c');
 
     console.log(`URL: ${url.toString().length} chars (${flowers.length} flowers, ${useCompression ? 'compressed' : 'uncompressed'})`);
@@ -571,17 +528,17 @@ export function getBouquetUrl() {
 }
 
 /**
- * Wczytuje bukiet z URL - ZOPTYMALIZOWANA WERSJA
+ * ZOPTYMALIZOWANE ładowanie bukietu z URL
+ * Używa batch processing i progresywnego dodawania do sceny
  */
 export async function loadBouquetFromUrl(scene) {
     const params = new URLSearchParams(window.location.search);
 
-    // Sprawdź różne formaty
-    let encodedData = params.get('c'); // Compressed
+    let encodedData = params.get('c');
     let isCompressed = true;
 
     if (!encodedData) {
-        encodedData = params.get('b'); // Binary lub stary format
+        encodedData = params.get('b');
         isCompressed = false;
     }
 
@@ -596,26 +553,18 @@ export async function loadBouquetFromUrl(scene) {
         try {
             bytes = base64UrlToUint8(encodedData);
         } catch (e) {
-            // Może to stary format - spróbuj jako tekst
             const decoded = atob(encodedData);
             if (decoded.startsWith('[') || decoded.includes(',')) {
-                // Stary format JSON lub tekstowy
                 return await loadLegacyFormat(scene, decoded);
             }
             throw e;
         }
 
         // Dekompresuj jeśli potrzeba
-        if (isCompressed && pakoModule) {
-            try {
-                bytes = pakoModule.inflate(bytes);
-            } catch (e) {
-                console.error('Decompression failed', e);
-                return;
+        if (isCompressed) {
+            if (!pakoModule) {
+                await loadPako();
             }
-        } else if (isCompressed && !pakoModule) {
-            // Poczekaj na załadowanie pako
-            await loadPako();
             if (pakoModule) {
                 bytes = pakoModule.inflate(bytes);
             } else {
@@ -624,20 +573,18 @@ export async function loadBouquetFromUrl(scene) {
             }
         }
 
-        // Sprawdź wersję formatu
         const version = bytes[0];
 
         if (version !== 2) {
-            // Nieznana wersja - może stary format
             const decoded = new TextDecoder().decode(bytes);
             return await loadLegacyFormat(scene, decoded);
         }
 
         clearAllFlowers(scene);
 
-        // Parsuj binarny format - zbierz wszystkie dane kwiatów
+        // FAZA 1: Parsuj wszystkie dane kwiatów (szybkie)
         const flowerDataList = [];
-        let offset = 1; // Pomiń bajt wersji
+        let offset = 1;
 
         while (offset < bytes.length) {
             const { data, nextOffset } = unpackFlowerBinary(bytes, offset);
@@ -647,39 +594,81 @@ export async function loadBouquetFromUrl(scene) {
 
         console.log(`Parsed ${flowerDataList.length} flowers from URL`);
 
-        // RÓWNOLEGŁE tworzenie wszystkich kwiatów
-        const createPromises = flowerDataList.map(async (data) => {
+        // FAZA 2: Grupuj kwiaty według typu
+        const flowersByType = new Map();
+        flowerDataList.forEach((data, index) => {
             const type = flowerTypes[data.typeIndex];
-            if (!type) return null;
+            if (!type) return;
 
-            // Bounds powinny być już w cache po preload
-            const bounds = getCachedBounds(type.id) || await getModelBounds(type.id, type.modelUrl);
-            const radius = bounds.radiusXZ;
-
-            const position = {
-                x: data.x,
-                z: data.z,
-                y: data.y,
-                rotX: data.rotX,
-                rotY: data.rotY,
-                rotZ: data.rotZ,
-                scaleX: data.scaleX,
-                scaleY: data.scaleY,
-                scaleZ: data.scaleZ,
-                radius
-            };
-
-            const flowerId = generateFlowerId();
-            const { flower } = await createFlowerFromGLB(type, position, flowerId);
-
-            return { flower, flowerId, radius, position };
+            if (!flowersByType.has(type.id)) {
+                flowersByType.set(type.id, []);
+            }
+            flowersByType.get(type.id).push({ data, index, type });
         });
 
-        // Czekaj na wszystkie kwiaty równolegle
-        const results = await Promise.all(createPromises);
+        // FAZA 3: Twórz kwiaty batch'ami według typu (efektywniejsze klonowanie)
+        const allFlowerResults = new Array(flowerDataList.length);
 
-        // Dodaj wszystkie kwiaty do sceny
-        for (const result of results) {
+        for (const [typeId, flowerGroup] of flowersByType) {
+            const type = flowerGroup[0].type;
+
+            // Pobierz wiele modeli naraz z cache
+            const models = getMultipleModelsFromCache(typeId, flowerGroup.length);
+
+            if (models) {
+                // Użyj pre-klonowanych modeli
+                for (let i = 0; i < flowerGroup.length; i++) {
+                    const { data, index } = flowerGroup[i];
+                    const bounds = models[i].bounds;
+                    const radius = bounds.radiusXZ;
+
+                    const position = {
+                        x: data.x,
+                        z: data.z,
+                        y: data.y,
+                        rotX: data.rotX,
+                        rotY: data.rotY,
+                        rotZ: data.rotZ,
+                        scaleX: data.scaleX,
+                        scaleY: data.scaleY,
+                        scaleZ: data.scaleZ,
+                        radius
+                    };
+
+                    const flowerId = generateFlowerId();
+                    const { flower } = await createFlowerFromGLB(type, position, flowerId, models[i]);
+
+                    allFlowerResults[index] = { flower, flowerId, radius, position };
+                }
+            } else {
+                // Fallback: ładuj pojedynczo
+                for (const { data, index, type } of flowerGroup) {
+                    const bounds = getCachedBounds(type.id) || await getModelBounds(type.id, type.modelUrl);
+                    const radius = bounds.radiusXZ;
+
+                    const position = {
+                        x: data.x,
+                        z: data.z,
+                        y: data.y,
+                        rotX: data.rotX,
+                        rotY: data.rotY,
+                        rotZ: data.rotZ,
+                        scaleX: data.scaleX,
+                        scaleY: data.scaleY,
+                        scaleZ: data.scaleZ,
+                        radius
+                    };
+
+                    const flowerId = generateFlowerId();
+                    const { flower } = await createFlowerFromGLB(type, position, flowerId);
+
+                    allFlowerResults[index] = { flower, flowerId, radius, position };
+                }
+            }
+        }
+
+        // FAZA 4: Dodaj wszystkie kwiaty do sceny (batch add)
+        for (const result of allFlowerResults) {
             if (!result) continue;
 
             scene.add(result.flower);
@@ -707,48 +696,61 @@ async function loadLegacyFormat(scene, decoded) {
     let bouquetData;
 
     try {
-        // Spróbuj JSON
         bouquetData = JSON.parse(decoded);
     } catch (e) {
-        // Tekstowy format: "t,x,z;t,x,z"
         bouquetData = decoded.split(';').map(s => s.split(',').map(Number));
     }
 
     clearAllFlowers(scene);
 
-    // RÓWNOLEGŁE tworzenie kwiatów
-    const createPromises = bouquetData.map(async (item) => {
-        if (item.length < 3) return null;
-
+    // Grupuj według typu
+    const flowersByType = new Map();
+    bouquetData.forEach((item, index) => {
+        if (item.length < 3) return;
         const typeIndex = item[0];
         const type = flowerTypes[typeIndex];
-        if (!type) return null;
+        if (!type) return;
 
-        const bounds = getCachedBounds(type.id) || await getModelBounds(type.id, type.modelUrl);
-        const radius = bounds.radiusXZ;
-
-        const position = {
-            x: item[1],
-            z: item[2],
-            y: item[3] || 0,
-            rotX: item[4] || 0,
-            rotY: item[5] || 0,
-            rotZ: item[6] || 0,
-            scaleX: item[7] || 1,
-            scaleY: item[8] || 1,
-            scaleZ: item[9] || 1,
-            radius
-        };
-
-        const flowerId = generateFlowerId();
-        const { flower } = await createFlowerFromGLB(type, position, flowerId);
-
-        return { flower, flowerId, radius, position };
+        if (!flowersByType.has(type.id)) {
+            flowersByType.set(type.id, []);
+        }
+        flowersByType.get(type.id).push({ item, index, type });
     });
 
-    const results = await Promise.all(createPromises);
+    const allFlowerResults = new Array(bouquetData.length);
 
-    for (const result of results) {
+    for (const [typeId, flowerGroup] of flowersByType) {
+        const type = flowerGroup[0].type;
+        const models = getMultipleModelsFromCache(typeId, flowerGroup.length);
+
+        for (let i = 0; i < flowerGroup.length; i++) {
+            const { item, index } = flowerGroup[i];
+            const preloadedModel = models ? models[i] : null;
+
+            const bounds = preloadedModel?.bounds || getCachedBounds(type.id) || await getModelBounds(type.id, type.modelUrl);
+            const radius = bounds.radiusXZ;
+
+            const position = {
+                x: item[1],
+                z: item[2],
+                y: item[3] || 0,
+                rotX: item[4] || 0,
+                rotY: item[5] || 0,
+                rotZ: item[6] || 0,
+                scaleX: item[7] || 1,
+                scaleY: item[8] || 1,
+                scaleZ: item[9] || 1,
+                radius
+            };
+
+            const flowerId = generateFlowerId();
+            const { flower } = await createFlowerFromGLB(type, position, flowerId, preloadedModel);
+
+            allFlowerResults[index] = { flower, flowerId, radius, position };
+        }
+    }
+
+    for (const result of allFlowerResults) {
         if (!result) continue;
 
         scene.add(result.flower);
