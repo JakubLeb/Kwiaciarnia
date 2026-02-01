@@ -25,7 +25,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     setupCameraControls(camera, renderer.domElement);
     console.log('✓ Kontrolki kamery skonfigurowane');
 
-    // 3. Preładowanie modeli i obliczenie bounds
+    // 3. Preładowanie modeli i obliczenie bounds - PRZED ładowaniem z URL!
     console.log('⏳ Preładowanie modeli kwiatów...');
     await preloadAllModels(flowerTypes);
 
@@ -51,7 +51,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     initFlowerEditor();
     console.log('✓ Edytor kwiatów zainicjalizowany');
 
-    // 7. Wczytaj bukiet z URL (jeśli jest)
+    // 7. Wczytaj bukiet z URL (jeśli jest) - TERAZ modele są już w cache!
     await loadBouquetFromUrl(scene);
 
     // 8. Start animacji

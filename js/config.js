@@ -37,7 +37,7 @@ export const SCENE_CONFIG = {
 };
 
 export const CAMERA_CONTROLS_CONFIG = {
-    minDistance: 3,
+    minDistance: 2,
     maxDistance: 10,
     defaultDistance: 6,
     rotationSpeed: 0.01,

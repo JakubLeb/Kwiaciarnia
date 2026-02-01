@@ -143,7 +143,7 @@ function cloneMaterials(object) {
 }
 
 /**
- * Tworzy kwiat z modelu GLB
+ * Tworzy kwiat z modelu GLB (synchronicznie jeśli model w cache)
  */
 async function createFlowerFromGLB(type, position, flowerId) {
     try {
@@ -571,7 +571,7 @@ export function getBouquetUrl() {
 }
 
 /**
- * Wczytuje bukiet z URL
+ * Wczytuje bukiet z URL - ZOPTYMALIZOWANA WERSJA
  */
 export async function loadBouquetFromUrl(scene) {
     const params = new URLSearchParams(window.location.search);
@@ -589,6 +589,7 @@ export async function loadBouquetFromUrl(scene) {
 
     try {
         console.log("Wczytywanie bukietu z linku...");
+        const startTime = performance.now();
 
         // Dekoduj base64
         let bytes;
@@ -634,17 +635,25 @@ export async function loadBouquetFromUrl(scene) {
 
         clearAllFlowers(scene);
 
-        // Parsuj binarny format
+        // Parsuj binarny format - zbierz wszystkie dane kwiatów
+        const flowerDataList = [];
         let offset = 1; // Pomiń bajt wersji
 
         while (offset < bytes.length) {
             const { data, nextOffset } = unpackFlowerBinary(bytes, offset);
             offset = nextOffset;
+            flowerDataList.push(data);
+        }
 
+        console.log(`Parsed ${flowerDataList.length} flowers from URL`);
+
+        // RÓWNOLEGŁE tworzenie wszystkich kwiatów
+        const createPromises = flowerDataList.map(async (data) => {
             const type = flowerTypes[data.typeIndex];
-            if (!type) continue;
+            if (!type) return null;
 
-            const bounds = await getModelBounds(type.id, type.modelUrl);
+            // Bounds powinny być już w cache po preload
+            const bounds = getCachedBounds(type.id) || await getModelBounds(type.id, type.modelUrl);
             const radius = bounds.radiusXZ;
 
             const position = {
@@ -662,19 +671,29 @@ export async function loadBouquetFromUrl(scene) {
 
             const flowerId = generateFlowerId();
             const { flower } = await createFlowerFromGLB(type, position, flowerId);
-            scene.add(flower);
 
-            registerPlacedFlower(position.x, position.z, radius, flowerId);
+            return { flower, flowerId, radius, position };
+        });
 
+        // Czekaj na wszystkie kwiaty równolegle
+        const results = await Promise.all(createPromises);
+
+        // Dodaj wszystkie kwiaty do sceny
+        for (const result of results) {
+            if (!result) continue;
+
+            scene.add(result.flower);
+            registerPlacedFlower(result.position.x, result.position.z, result.radius, result.flowerId);
             flowers.push({
-                mesh: flower,
-                flowerId,
-                radius,
-                position
+                mesh: result.flower,
+                flowerId: result.flowerId,
+                radius: result.radius,
+                position: result.position
             });
         }
 
-        console.log(`Wczytano bukiet z ${flowers.length} kwiatami z URL.`);
+        const loadTime = performance.now() - startTime;
+        console.log(`Wczytano bukiet z ${flowers.length} kwiatami z URL w ${loadTime.toFixed(0)}ms`);
 
     } catch (error) {
         console.error("Błąd podczas wczytywania bukietu z URL:", error);
@@ -682,7 +701,7 @@ export async function loadBouquetFromUrl(scene) {
 }
 
 /**
- * Wczytuje stary format (JSON lub tekstowy)
+ * Wczytuje stary format (JSON lub tekstowy) - ZOPTYMALIZOWANA WERSJA
  */
 async function loadLegacyFormat(scene, decoded) {
     let bouquetData;
@@ -697,14 +716,15 @@ async function loadLegacyFormat(scene, decoded) {
 
     clearAllFlowers(scene);
 
-    for (const item of bouquetData) {
-        if (item.length < 3) continue;
+    // RÓWNOLEGŁE tworzenie kwiatów
+    const createPromises = bouquetData.map(async (item) => {
+        if (item.length < 3) return null;
 
         const typeIndex = item[0];
         const type = flowerTypes[typeIndex];
-        if (!type) continue;
+        if (!type) return null;
 
-        const bounds = await getModelBounds(type.id, type.modelUrl);
+        const bounds = getCachedBounds(type.id) || await getModelBounds(type.id, type.modelUrl);
         const radius = bounds.radiusXZ;
 
         const position = {
@@ -722,15 +742,22 @@ async function loadLegacyFormat(scene, decoded) {
 
         const flowerId = generateFlowerId();
         const { flower } = await createFlowerFromGLB(type, position, flowerId);
-        scene.add(flower);
 
-        registerPlacedFlower(position.x, position.z, radius, flowerId);
+        return { flower, flowerId, radius, position };
+    });
 
+    const results = await Promise.all(createPromises);
+
+    for (const result of results) {
+        if (!result) continue;
+
+        scene.add(result.flower);
+        registerPlacedFlower(result.position.x, result.position.z, result.radius, result.flowerId);
         flowers.push({
-            mesh: flower,
-            flowerId,
-            radius,
-            position
+            mesh: result.flower,
+            flowerId: result.flowerId,
+            radius: result.radius,
+            position: result.position
         });
     }
 
