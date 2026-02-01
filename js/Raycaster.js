@@ -40,11 +40,11 @@ let touchMoved = false;
 const TAP_THRESHOLD_TIME = 300;
 const TAP_THRESHOLD_DISTANCE = 15;
 
-// Kolory osi
+// Kolory osi - JAŚNIEJSZE I BARDZIEJ NASYCONE
 const AXIS_COLORS = {
-    x: 0xff4444,
-    y: 0x44ff44,
-    z: 0x4444ff,
+    x: 0xff2222,
+    y: 0x22ff22,
+    z: 0x2266ff,
     hover: 0xffff00
 };
 
@@ -179,16 +179,17 @@ function disableEditingMode() {
 }
 
 // ============================================
-// TWORZENIE GIZMO DLA POZYCJI (strzałki)
+// TWORZENIE GIZMO DLA POZYCJI (strzałki) - WIĘKSZE
 // ============================================
 function createPositionGizmo() {
     const gizmo = new THREE.Group();
     gizmo.name = 'positionGizmo';
 
-    const arrowLength = 0.8;
-    const coneRadius = 0.08;
-    const coneHeight = 0.2;
-    const lineRadius = 0.02;
+    // ZWIĘKSZONE ROZMIARY
+    const arrowLength = 1.4;
+    const coneRadius = 0.18;
+    const coneHeight = 0.35;
+    const lineRadius = 0.06;
 
     function createArrow(axis, color) {
         const arrow = new THREE.Group();
@@ -196,20 +197,22 @@ function createPositionGizmo() {
         arrow.userData.axis = axis;
         arrow.userData.gizmoType = 'position';
 
-        const lineGeometry = new THREE.CylinderGeometry(lineRadius, lineRadius, arrowLength, 8);
-        const lineMaterial = new THREE.MeshBasicMaterial({ color: color });
+        const lineGeometry = new THREE.CylinderGeometry(lineRadius, lineRadius, arrowLength, 12);
+        const lineMaterial = new THREE.MeshBasicMaterial({ color: color, depthTest: false });
         const line = new THREE.Mesh(lineGeometry, lineMaterial);
         line.position.y = arrowLength / 2;
         line.userData.axis = axis;
         line.userData.gizmoType = 'position';
+        line.renderOrder = 999;
         arrow.add(line);
 
-        const coneGeometry = new THREE.ConeGeometry(coneRadius, coneHeight, 16);
-        const coneMaterial = new THREE.MeshBasicMaterial({ color: color });
+        const coneGeometry = new THREE.ConeGeometry(coneRadius, coneHeight, 24);
+        const coneMaterial = new THREE.MeshBasicMaterial({ color: color, depthTest: false });
         const cone = new THREE.Mesh(coneGeometry, coneMaterial);
         cone.position.y = arrowLength + coneHeight / 2;
         cone.userData.axis = axis;
         cone.userData.gizmoType = 'position';
+        cone.renderOrder = 999;
         arrow.add(cone);
 
         return arrow;
@@ -226,11 +229,13 @@ function createPositionGizmo() {
     arrowZ.rotation.x = Math.PI / 2;
     gizmo.add(arrowZ);
 
-    const centerGeometry = new THREE.SphereGeometry(0.06, 16, 16);
-    const centerMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    // WIĘKSZA KULA W CENTRUM
+    const centerGeometry = new THREE.SphereGeometry(0.12, 24, 24);
+    const centerMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false });
     const center = new THREE.Mesh(centerGeometry, centerMaterial);
     center.userData.axis = 'all';
     center.userData.gizmoType = 'position';
+    center.renderOrder = 999;
     gizmo.add(center);
 
     gizmo.visible = false;
@@ -238,22 +243,24 @@ function createPositionGizmo() {
 }
 
 // ============================================
-// TWORZENIE GIZMO DLA ROTACJI (pierścienie)
+// TWORZENIE GIZMO DLA ROTACJI (pierścienie) - WIĘKSZE
 // ============================================
 function createRotationGizmo() {
     const gizmo = new THREE.Group();
     gizmo.name = 'rotationGizmo';
 
-    const ringRadius = 0.7;
-    const tubeRadius = 0.03;
+    // ZWIĘKSZONE ROZMIARY
+    const ringRadius = 1.1;
+    const tubeRadius = 0.06;
 
     function createRing(axis, color) {
-        const geometry = new THREE.TorusGeometry(ringRadius, tubeRadius, 8, 48);
-        const material = new THREE.MeshBasicMaterial({ color: color });
+        const geometry = new THREE.TorusGeometry(ringRadius, tubeRadius, 12, 64);
+        const material = new THREE.MeshBasicMaterial({ color: color, depthTest: false });
         const ring = new THREE.Mesh(geometry, material);
         ring.name = `ring_${axis}`;
         ring.userData.axis = axis;
         ring.userData.gizmoType = 'rotation';
+        ring.renderOrder = 999;
         return ring;
     }
 
@@ -273,15 +280,16 @@ function createRotationGizmo() {
 }
 
 // ============================================
-// TWORZENIE GIZMO DLA SKALI (sześciany)
+// TWORZENIE GIZMO DLA SKALI (sześciany) - WIĘKSZE
 // ============================================
 function createScaleGizmo() {
     const gizmo = new THREE.Group();
     gizmo.name = 'scaleGizmo';
 
-    const lineLength = 0.6;
-    const cubeSize = 0.1;
-    const lineRadius = 0.015;
+    // ZWIĘKSZONE ROZMIARY
+    const lineLength = 1.0;
+    const cubeSize = 0.18;
+    const lineRadius = 0.04;
 
     function createScaleHandle(axis, color) {
         const handle = new THREE.Group();
@@ -289,20 +297,22 @@ function createScaleGizmo() {
         handle.userData.axis = axis;
         handle.userData.gizmoType = 'scale';
 
-        const lineGeometry = new THREE.CylinderGeometry(lineRadius, lineRadius, lineLength, 8);
-        const lineMaterial = new THREE.MeshBasicMaterial({ color: color });
+        const lineGeometry = new THREE.CylinderGeometry(lineRadius, lineRadius, lineLength, 12);
+        const lineMaterial = new THREE.MeshBasicMaterial({ color: color, depthTest: false });
         const line = new THREE.Mesh(lineGeometry, lineMaterial);
         line.position.y = lineLength / 2;
         line.userData.axis = axis;
         line.userData.gizmoType = 'scale';
+        line.renderOrder = 999;
         handle.add(line);
 
         const cubeGeometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
-        const cubeMaterial = new THREE.MeshBasicMaterial({ color: color });
+        const cubeMaterial = new THREE.MeshBasicMaterial({ color: color, depthTest: false });
         const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
         cube.position.y = lineLength + cubeSize / 2;
         cube.userData.axis = axis;
         cube.userData.gizmoType = 'scale';
+        cube.renderOrder = 999;
         handle.add(cube);
 
         return handle;
@@ -319,11 +329,13 @@ function createScaleGizmo() {
     handleZ.rotation.x = Math.PI / 2;
     gizmo.add(handleZ);
 
-    const centerGeometry = new THREE.BoxGeometry(0.08, 0.08, 0.08);
-    const centerMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    // WIĘKSZY SZEŚCIAN W CENTRUM
+    const centerGeometry = new THREE.BoxGeometry(0.14, 0.14, 0.14);
+    const centerMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false });
     const center = new THREE.Mesh(centerGeometry, centerMaterial);
     center.userData.axis = 'all';
     center.userData.gizmoType = 'scale';
+    center.renderOrder = 999;
     gizmo.add(center);
 
     gizmo.visible = false;

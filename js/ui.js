@@ -15,8 +15,7 @@ import {
     replaceFlower,
     deleteFlower,
     getBouquetUrl,
-    syncFlowerPositionAfterEdit,
-    getFlowersList
+    syncFlowerPositionAfterEdit
 } from './flowers.js';
 import {
     getSelectedFlower,
@@ -348,10 +347,17 @@ function setupActionButtons() {
     });
 
     document.getElementById('btn-qr').addEventListener('click', () => {
-        const url = getBouquetUrl();
-
         if (getFlowersCount() === 0) {
             alert("Bukiet jest pusty!");
+            return;
+        }
+
+        let url;
+        try {
+            url = getBouquetUrl();
+        } catch (error) {
+            console.error('Błąd generowania URL:', error);
+            alert("Wystąpił błąd podczas generowania linku.");
             return;
         }
 
@@ -359,22 +365,60 @@ function setupActionButtons() {
         const qrContainer = document.getElementById('qr-code-container');
         const textSummary = document.getElementById('qr-text-summary');
 
+        // Wyczyść poprzedni kod QR
         qrContainer.innerHTML = '';
 
-        new QRCode(qrContainer, {
-            text: url,
-            width: 256,
-            height: 256,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.L
-        });
+        // Sprawdź czy URL nie jest zbyt długi
+        if (url.length > 2000) {
+            console.warn('URL jest bardzo długi:', url.length, 'znaków');
+        }
 
-        textSummary.innerHTML = `
-            <strong>Zeskanuj, aby otworzyć ten bukiet.</strong><br><br>
-        `;
+        try {
+            // Sprawdź czy biblioteka QRCode jest dostępna
+            if (typeof QRCode === 'undefined') {
+                throw new Error('Biblioteka QRCode nie jest załadowana');
+            }
 
-        modal.style.display = 'flex';
+            new QRCode(qrContainer, {
+                text: url,
+                width: 256,
+                height: 256,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.L
+            });
+
+            textSummary.innerHTML = `
+                <strong>Zeskanuj, aby otworzyć ten bukiet.</strong><br><br>
+                <small style="word-break: break-all; color: #666;">
+                    <a href="${url}" target="_blank" style="color: #7c3aed;">Otwórz link</a>
+                </small>
+            `;
+
+            modal.style.display = 'flex';
+        } catch (error) {
+            console.error('Błąd generowania kodu QR:', error);
+
+            // Fallback - pokaż sam link
+            qrContainer.innerHTML = `
+                <div style="padding: 20px; text-align: center; color: #666;">
+                    <p>Nie udało się wygenerować kodu QR.</p>
+                    <p style="margin-top: 10px;">Użyj linku poniżej:</p>
+                </div>
+            `;
+
+            textSummary.innerHTML = `
+                <div style="word-break: break-all; padding: 10px; background: #f5f5f5; border-radius: 8px; max-height: 100px; overflow-y: auto;">
+                    <a href="${url}" target="_blank" style="color: #7c3aed; font-size: 12px;">${url}</a>
+                </div>
+                <button onclick="navigator.clipboard.writeText('${url.replace(/'/g, "\\'")}').then(() => alert('Link skopiowany!'))" 
+                        style="margin-top: 10px; padding: 8px 16px; background: #7c3aed; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                    📋 Kopiuj link
+                </button>
+            `;
+
+            modal.style.display = 'flex';
+        }
     });
 
     document.getElementById('close-qr').addEventListener('click', () => {
@@ -385,70 +429,6 @@ function setupActionButtons() {
         if (e.target.id === 'qr-modal') {
             document.getElementById('qr-modal').style.display = 'none';
         }
-    });
-}
-
-/**
- * Zlicza kwiaty według typu
- */
-function countFlowersByType() {
-    const flowersList = getFlowersList();
-    const counts = {};
-
-    flowersList.forEach(flower => {
-        const typeId = flower.mesh.userData.flowerType?.id;
-        if (typeId) {
-            counts[typeId] = (counts[typeId] || 0) + 1;
-        }
-    });
-
-    return counts;
-}
-
-/**
- * Aktualizuje listę kwiatów w bukiecie
- */
-function updateBouquetContentList() {
-    const container = document.getElementById('bouquet-content-list');
-    if (!container) return;
-
-    const counts = countFlowersByType();
-    const hasFlowers = Object.keys(counts).length > 0;
-
-    if (!hasFlowers) {
-        container.innerHTML = '<p class="empty-bouquet-text">Bukiet jest pusty</p>';
-        return;
-    }
-
-    container.innerHTML = '';
-
-    // Sortuj według liczby (malejąco)
-    const sortedTypes = Object.entries(counts)
-        .sort((a, b) => b[1] - a[1]);
-
-    sortedTypes.forEach(([typeId, count]) => {
-        const flowerType = flowerTypes.find(f => f.id === typeId);
-        if (!flowerType) return;
-
-        const item = document.createElement('div');
-        item.className = 'bouquet-content-item';
-
-        const colorDiv = document.createElement('div');
-        colorDiv.className = 'bouquet-item-color';
-        colorDiv.style.backgroundColor = `#${flowerType.color.toString(16).padStart(6, '0')}`;
-
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'bouquet-item-name';
-        nameSpan.textContent = flowerType.name;
-
-        const countSpan = document.createElement('span');
-        countSpan.className = 'bouquet-item-count';
-        countSpan.textContent = `×${count}`;
-
-        item.appendChild(colorDiv);
-        item.appendChild(nameSpan);
-        item.appendChild(countSpan);
-        container.appendChild(item);
     });
 }
 
@@ -481,7 +461,4 @@ export function updateUI() {
     addBouquetButtons.forEach(btn => {
         btn.disabled = false;
     });
-
-    // Aktualizuj listę zawartości bukietu
-    updateBouquetContentList();
 }

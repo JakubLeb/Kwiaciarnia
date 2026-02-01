@@ -75,14 +75,25 @@ function createProceduralFlower(type, position) {
 function applyPositionToFlower(flower, position) {
     flower.position.set(position.x, position.y, position.z);
 
-    // Obróć w kierunku centrum
-    if (position.x !== 0 || position.z !== 0) {
-        const angleToCenter = Math.atan2(position.x, position.z);
-        flower.rotation.y = angleToCenter;
+    // Jeśli mamy pełne dane rotacji z URL, użyj ich
+    if (position.rotX !== undefined && position.rotY !== undefined && position.rotZ !== undefined) {
+        flower.rotation.set(position.rotX, position.rotY, position.rotZ);
+    } else {
+        // Domyślna rotacja - obróć w kierunku centrum i przechyl
+        if (position.x !== 0 || position.z !== 0) {
+            const angleToCenter = Math.atan2(position.x, position.z);
+            flower.rotation.y = angleToCenter;
+        }
+        // Przechyl na zewnątrz
+        if (position.tiltAngle) {
+            flower.rotateX(position.tiltAngle);
+        }
     }
 
-    // Przechyl na zewnątrz
-    flower.rotateX(position.tiltAngle);
+    // Jeśli mamy dane skali z URL, użyj ich
+    if (position.scaleX !== undefined && position.scaleY !== undefined && position.scaleZ !== undefined) {
+        flower.scale.set(position.scaleX, position.scaleY, position.scaleZ);
+    }
 }
 
 /**
@@ -322,7 +333,16 @@ export async function generateFullBouquet(flowerType, scene) {
 }
 
 /**
+ * Zaokrągla liczbę do 2 miejsc po przecinku
+ */
+function round2(num) {
+    return Math.round(num * 100) / 100;
+}
+
+/**
  * Generuje SKOMPRESOWANY URL z zakodowanym stanem bukietu
+ * Format: [typeIndex, x, z, y, rotX, rotY, rotZ, scaleX, scaleY, scaleZ]
+ * Dla kwiatów bez zmian skali: [typeIndex, x, z, y, rotX, rotY, rotZ] (krótszy format)
  */
 export function getBouquetUrl() {
     if (flowers.length === 0) {
@@ -331,21 +351,48 @@ export function getBouquetUrl() {
         return url.toString();
     }
 
-    // Format: [typeIndex, x, z, y, tilt] dla każdego kwiatu
     const bouquetData = flowers.map(f => {
-        const typeIndex = flowerTypes.findIndex(t => t.id === f.mesh.userData.flowerType.id);
-        const pos = f.position;
-        return [
-            typeIndex,
-            Math.round(pos.x * 1000) / 1000,
-            Math.round(pos.z * 1000) / 1000,
-            Math.round(pos.y * 1000) / 1000,
-            Math.round(pos.tiltAngle * 1000) / 1000
-        ];
+        const mesh = f.mesh;
+        const typeIndex = flowerTypes.findIndex(t => t.id === mesh.userData.flowerType.id);
+
+        // Pobierz aktualne wartości z mesh (nie z position - to może być nieaktualne)
+        const x = round2(mesh.position.x);
+        const z = round2(mesh.position.z);
+        const y = round2(mesh.position.y);
+        const rotX = round2(mesh.rotation.x);
+        const rotY = round2(mesh.rotation.y);
+        const rotZ = round2(mesh.rotation.z);
+        const scaleX = round2(mesh.scale.x);
+        const scaleY = round2(mesh.scale.y);
+        const scaleZ = round2(mesh.scale.z);
+
+        // Sprawdź czy skala jest domyślna
+        const hasCustomScale = scaleX !== 1 || scaleY !== 1 || scaleZ !== 1;
+
+        if (hasCustomScale) {
+            // Pełny format z rotacją i skalą
+            return [typeIndex, x, z, y, rotX, rotY, rotZ, scaleX, scaleY, scaleZ];
+        } else {
+            // Krótszy format z rotacją (bez skali)
+            return [typeIndex, x, z, y, rotX, rotY, rotZ];
+        }
     });
 
     const jsonString = JSON.stringify(bouquetData);
-    const encodedData = btoa(jsonString);
+
+    // Bezpieczne kodowanie base64
+    let encodedData;
+    try {
+        encodedData = btoa(unescape(encodeURIComponent(jsonString)));
+    } catch (e) {
+        console.error('Błąd kodowania URL:', e);
+        try {
+            encodedData = btoa(jsonString);
+        } catch (e2) {
+            console.error('Błąd kodowania URL (fallback):', e2);
+            return window.location.href;
+        }
+    }
 
     const url = new URL(window.location.href);
     url.searchParams.set('b', encodedData);
@@ -364,18 +411,25 @@ export async function loadBouquetFromUrl(scene) {
 
     try {
         console.log("Wczytywanie bukietu z linku...");
-        const jsonString = atob(encodedData);
+
+        // Bezpieczne dekodowanie base64
+        let jsonString;
+        try {
+            jsonString = decodeURIComponent(escape(atob(encodedData)));
+        } catch (e) {
+            // Fallback dla starszego formatu
+            jsonString = atob(encodedData);
+        }
+
         const bouquetData = JSON.parse(jsonString);
 
         clearAllFlowers(scene);
 
         for (const item of bouquetData) {
-            let typeIndex, x, z, y, tiltAngle;
-
-            // Obsługa starego formatu [positionIndex, typeIndex]
+            // Obsługa różnych formatów
             if (item.length === 2) {
-                // Stary format - konwertuj na nowy
-                typeIndex = item[1];
+                // Stary format [positionIndex, typeIndex]
+                const typeIndex = item[1];
                 const type = flowerTypes[typeIndex];
                 if (type) {
                     await addFlower(type, scene);
@@ -383,8 +437,44 @@ export async function loadBouquetFromUrl(scene) {
                 continue;
             }
 
-            // Nowy format [typeIndex, x, z, y, tilt]
-            [typeIndex, x, z, y, tiltAngle] = item;
+            if (item.length === 5) {
+                // Stary format [typeIndex, x, z, y, tiltAngle]
+                const [typeIndex, x, z, y, tiltAngle] = item;
+                const type = flowerTypes[typeIndex];
+                if (!type) continue;
+
+                const bounds = await getModelBounds(type.id, type.modelUrl);
+                const radius = bounds.radiusXZ;
+
+                const position = { x, z, y, tiltAngle, radius };
+                const flowerId = generateFlowerId();
+
+                const { flower } = await createFlowerFromGLB(type, position, flowerId);
+                scene.add(flower);
+
+                registerPlacedFlower(x, z, radius, flowerId);
+
+                flowers.push({
+                    mesh: flower,
+                    flowerId,
+                    radius,
+                    position
+                });
+                continue;
+            }
+
+            // Nowy format [typeIndex, x, z, y, rotX, rotY, rotZ] lub
+            // [typeIndex, x, z, y, rotX, rotY, rotZ, scaleX, scaleY, scaleZ]
+            const typeIndex = item[0];
+            const x = item[1];
+            const z = item[2];
+            const y = item[3];
+            const rotX = item[4] !== undefined ? item[4] : 0;
+            const rotY = item[5] !== undefined ? item[5] : 0;
+            const rotZ = item[6] !== undefined ? item[6] : 0;
+            const scaleX = item[7] !== undefined ? item[7] : 1;
+            const scaleY = item[8] !== undefined ? item[8] : 1;
+            const scaleZ = item[9] !== undefined ? item[9] : 1;
 
             const type = flowerTypes[typeIndex];
             if (!type) continue;
@@ -392,7 +482,12 @@ export async function loadBouquetFromUrl(scene) {
             const bounds = await getModelBounds(type.id, type.modelUrl);
             const radius = bounds.radiusXZ;
 
-            const position = { x, z, y, tiltAngle, radius };
+            const position = {
+                x, z, y,
+                rotX, rotY, rotZ,
+                scaleX, scaleY, scaleZ,
+                radius
+            };
             const flowerId = generateFlowerId();
 
             const { flower } = await createFlowerFromGLB(type, position, flowerId);
@@ -429,10 +524,16 @@ export function syncFlowerPositionAfterEdit(flowerMesh) {
     // Aktualizuj w systemie kolizji
     updateFlowerPosition(flowerData.flowerId, newX, newZ);
 
-    // Aktualizuj lokalną pozycję
+    // Aktualizuj lokalną pozycję (pełne dane)
     flowerData.position.x = newX;
     flowerData.position.z = newZ;
     flowerData.position.y = flowerMesh.position.y;
+    flowerData.position.rotX = flowerMesh.rotation.x;
+    flowerData.position.rotY = flowerMesh.rotation.y;
+    flowerData.position.rotZ = flowerMesh.rotation.z;
+    flowerData.position.scaleX = flowerMesh.scale.x;
+    flowerData.position.scaleY = flowerMesh.scale.y;
+    flowerData.position.scaleZ = flowerMesh.scale.z;
 }
 
 /**
@@ -440,13 +541,6 @@ export function syncFlowerPositionAfterEdit(flowerMesh) {
  */
 export function getFlowersCount() {
     return flowers.length;
-}
-
-/**
- * Zwraca listę wszystkich kwiatów
- */
-export function getFlowersList() {
-    return [...flowers];
 }
 
 export function getAvailablePositionsCount() {
