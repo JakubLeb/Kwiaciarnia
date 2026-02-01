@@ -537,6 +537,32 @@ export function syncFlowerPositionAfterEdit(flowerMesh) {
 }
 
 /**
+ * Zwraca zawartość bukietu (podsumowanie typów kwiatów)
+ * @returns {Array} - Tablica obiektów { id, name, color, count }
+ */
+export function getBouquetContents() {
+    const contents = new Map();
+
+    flowers.forEach(flower => {
+        const type = flower.mesh.userData.flowerType;
+        if (type) {
+            if (contents.has(type.id)) {
+                contents.get(type.id).count++;
+            } else {
+                contents.set(type.id, {
+                    id: type.id,
+                    name: type.name,
+                    color: type.color,
+                    count: 1
+                });
+            }
+        }
+    });
+
+    return Array.from(contents.values());
+}
+
+/**
  * Gettery dla stanu kwiatów
  */
 export function getFlowersCount() {

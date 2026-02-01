@@ -15,7 +15,8 @@ import {
     replaceFlower,
     deleteFlower,
     getBouquetUrl,
-    syncFlowerPositionAfterEdit
+    syncFlowerPositionAfterEdit,
+    getBouquetContents
 } from './flowers.js';
 import {
     getSelectedFlower,
@@ -433,6 +434,51 @@ function setupActionButtons() {
 }
 
 /**
+ * Aktualizuje listę zawartości bukietu
+ */
+function updateBouquetContentsList() {
+    const section = document.getElementById('bouquet-contents-section');
+    const list = document.getElementById('bouquet-contents-list');
+
+    // Sprawdź czy elementy istnieją
+    if (!section || !list) {
+        return;
+    }
+
+    const contents = getBouquetContents();
+
+    if (contents.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = 'block';
+    list.innerHTML = '';
+
+    contents.forEach(item => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'bouquet-content-item';
+
+        const colorDiv = document.createElement('div');
+        colorDiv.className = 'bouquet-content-color';
+        colorDiv.style.backgroundColor = `#${item.color.toString(16).padStart(6, '0')}`;
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'bouquet-content-name';
+        nameSpan.textContent = item.name;
+
+        const countSpan = document.createElement('span');
+        countSpan.className = 'bouquet-content-count';
+        countSpan.textContent = `×${item.count}`;
+
+        itemEl.appendChild(colorDiv);
+        itemEl.appendChild(nameSpan);
+        itemEl.appendChild(countSpan);
+        list.appendChild(itemEl);
+    });
+}
+
+/**
  * Aktualizuje stan interfejsu
  */
 export function updateUI() {
@@ -449,6 +495,9 @@ export function updateUI() {
 
     document.getElementById('btn-remove').disabled = flowerCount === 0;
     document.getElementById('btn-clear').disabled = flowerCount === 0;
+
+    // Aktualizuj listę zawartości bukietu
+    updateBouquetContentsList();
 
     // Przyciski dodawania - wyłącz jeśli mało miejsca
     const addOneButtons = document.querySelectorAll('.btn-add-one');
