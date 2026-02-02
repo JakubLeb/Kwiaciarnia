@@ -35,6 +35,29 @@ body {
     display: block;
 }
 
+/* ============================================ */
+/* PRZYCISK POWROTU DO STRONY GŁÓWNEJ          */
+/* ============================================ */
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #6b7280;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    margin-bottom: 16px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    transition: all 0.2s ease;
+}
+
+.back-link:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+
 h1 {
     font-size: 28px;
     font-weight: bold;
@@ -491,6 +514,87 @@ h1 {
 }
 
 /* ============================================ */
+/* ZAWARTOŚĆ BUKIETU - STAŁA WYSOKOŚĆ ZE SCROLL */
+/* ============================================ */
+
+#bouquet-contents-section {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
+    border: 1px solid #bbf7d0;
+}
+
+#bouquet-contents-section h3 {
+    color: #166534;
+    margin-bottom: 12px;
+    font-size: 15px;
+}
+
+#bouquet-contents-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 150px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+/* Stylowanie scrollbara dla listy zawartości */
+#bouquet-contents-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+#bouquet-contents-list::-webkit-scrollbar-track {
+    background: #e5e7eb;
+    border-radius: 3px;
+}
+
+#bouquet-contents-list::-webkit-scrollbar-thumb {
+    background: #22c55e;
+    border-radius: 3px;
+}
+
+#bouquet-contents-list::-webkit-scrollbar-thumb:hover {
+    background: #16a34a;
+}
+
+.bouquet-content-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    flex-shrink: 0;
+}
+
+.bouquet-content-color {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.bouquet-content-name {
+    flex: 1;
+    font-weight: 500;
+    color: #374151;
+    font-size: 14px;
+}
+
+.bouquet-content-count {
+    font-weight: 600;
+    color: #7c3aed;
+    font-size: 14px;
+    background: #f3e8ff;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+/* ============================================ */
 /* RESPONSYWNOŚĆ - TABLETY */
 /* ============================================ */
 @media (max-width: 1024px) {
@@ -538,6 +642,13 @@ h1 {
         height: 50vh;
         min-height: 300px;
         flex: none;
+    }
+
+    /* Przycisk powrotu na mobile */
+    .back-link {
+        font-size: 13px;
+        padding: 6px 10px;
+        margin-bottom: 12px;
     }
 
     h1 {
@@ -718,6 +829,38 @@ h1 {
         max-width: 200px;
         height: auto;
     }
+
+    /* Zawartość bukietu na mobile */
+    #bouquet-contents-section {
+        padding: 12px;
+        margin-bottom: 16px;
+    }
+
+    #bouquet-contents-list {
+        max-height: 120px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .bouquet-content-item {
+        padding: 6px 10px;
+        gap: 6px;
+    }
+
+    .bouquet-content-color {
+        width: 20px;
+        height: 20px;
+    }
+
+    .bouquet-content-name {
+        font-size: 12px;
+    }
+
+    .bouquet-content-count {
+        font-size: 12px;
+        padding: 1px 6px;
+    }
 }
 
 /* ============================================ */
@@ -726,6 +869,11 @@ h1 {
 @media (max-width: 375px) {
     #sidebar {
         padding: 12px;
+    }
+
+    .back-link {
+        font-size: 12px;
+        padding: 5px 8px;
     }
 
     h1 {
@@ -785,6 +933,10 @@ h1 {
 
     .edit-mode-label {
         font-size: 9px;
+    }
+
+    #bouquet-contents-list {
+        max-height: 100px;
     }
 }
 
@@ -855,6 +1007,10 @@ h1 {
     .editor-flower-button span {
         font-size: 12px;
     }
+
+    #bouquet-contents-list {
+        max-height: 100px;
+    }
 }
 
 /* ============================================ */
@@ -892,102 +1048,10 @@ h1 {
     .edit-mode-btn {
         min-height: 60px;
     }
-}
-/* ============================================ */
-/* ZAWARTOŚĆ BUKIETU - DODAJ DO style.css      */
-/* ============================================ */
 
-#bouquet-contents-section {
-    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 24px;
-    border: 1px solid #bbf7d0;
-}
-
-#bouquet-contents-section h3 {
-    color: #166534;
-    margin-bottom: 12px;
-    font-size: 15px;
-}
-
-#bouquet-contents-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.bouquet-content-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.bouquet-content-color {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.bouquet-content-name {
-    flex: 1;
-    font-weight: 500;
-    color: #374151;
-    font-size: 14px;
-}
-
-.bouquet-content-count {
-    font-weight: 600;
-    color: #7c3aed;
-    font-size: 14px;
-    background: #f3e8ff;
-    padding: 2px 8px;
-    border-radius: 12px;
-}
-
-/* ============================================ */
-/* RESPONSYWNOŚĆ - ZAWARTOŚĆ BUKIETU           */
-/* ============================================ */
-@media (max-width: 768px) {
-    #bouquet-contents-section {
-        padding: 12px;
-        margin-bottom: 16px;
-    }
-
-    #bouquet-contents-list {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 6px;
-    }
-
-    .bouquet-content-item {
-        padding: 6px 10px;
-        gap: 6px;
-    }
-
-    .bouquet-content-color {
-        width: 20px;
-        height: 20px;
-    }
-
-    .bouquet-content-name {
-        font-size: 12px;
-    }
-
-    .bouquet-content-count {
-        font-size: 12px;
-        padding: 1px 6px;
-    }
-}
-
-@media (max-width: 375px) {
-    #bouquet-contents-list {
-        grid-template-columns: 1fr;
+    .back-link {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
     }
 }

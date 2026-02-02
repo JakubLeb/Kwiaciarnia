@@ -58,7 +58,7 @@ function initSmoothScroll() {
  * Lazy loading dla obrazków w galerii
  */
 function initLazyLoading() {
-    const images = document.querySelectorAll('.gallery-item img');
+    const images = document.querySelectorAll('.gallery-item images');
 
     if ('IntersectionObserver' in window) {
         const imageObserver = new IntersectionObserver((entries, observer) => {
