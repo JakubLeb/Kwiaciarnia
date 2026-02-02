@@ -10,9 +10,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-    <!-- Leaflet CSS (mapa) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-
     <!-- Własne style -->
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -20,7 +17,7 @@
 <!-- HEADER -->
 <header class="header">
     <nav class="nav container">
-        <a href="#" class="logo">Galeria Kwiatowa u Ani </a>
+        <a href="#" class="logo">Galeria Kwiatowa u Ani</a>
         <ul class="nav-links">
             <li><a href="#galeria">Galeria</a></li>
             <li><a href="#uslugi">Usługi</a></li>
@@ -45,9 +42,7 @@
             <h1>Kwiaty na każdą okazję</h1>
         </div>
         <div class="hero-image-wrapper">
-            <img src="img/main_img.jpg" alt="główne zdjęce"
-                 alt="Bukiet kwiatów"
-                 class="hero-image">
+            <img src="img/main_img.jpg" alt="Bukiet kwiatów" class="hero-image">
         </div>
     </section>
 
@@ -70,7 +65,7 @@
                     </div>
                     <div class="hours-row">
                         <span class="day">Niedziela</span>
-                        <span class="time">ZAMKNIĘTE</span>
+                        <span class="time closed">ZAMKNIĘTE</span>
                     </div>
                 </div>
             </div>
@@ -81,7 +76,7 @@
                 <div class="contact-list">
                     <div class="contact-item">
                         <span class="contact-icon">📞</span>
-                        <a href="tel:+481661072919">+48 661 072 919</a>
+                        <a href="tel:+48661072919">+48 661 072 919</a>
                     </div>
                     <div class="contact-item">
                         <span class="contact-icon">📍</span>
@@ -90,17 +85,18 @@
                 </div>
             </div>
             <!-- Social Media -->
-            <div class="info-card">
+            <div class="info-card info-card-social">
                 <h3>Social Media</h3>
                 <div class="contact-list">
                     <div class="contact-item">
                         <span class="contact-icon">📘</span>
-                        <a href="https://www.facebook.com/p/Galeria-Kwiatowa-u-Ani-100063565091303/" target="_blank">Facebook</a>
+                        <a href="https://www.facebook.com/p/Galeria-Kwiatowa-u-Ani-100063565091303/" target="_blank" rel="noopener noreferrer">Facebook</a>
                     </div>
                 </div>
             </div>
         </div>
     </section>
+
     <!-- GENERATOR CTA SECTION -->
     <section class="generator-cta">
         <div class="generator-content">
@@ -176,13 +172,30 @@
         </div>
     </section>
 
-
     <!-- MAP SECTION -->
     <section class="map-section" id="lokalizacja">
         <h2 class="section-title">Lokalizacja</h2>
         <div class="map-wrapper">
+            <div class="map-container">
+                <iframe
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2392.6385034922682!2d18.1406655!3d53.152582!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x470317eb46fa01dd%3A0xc21cf1ee16d23b29!2sKwiaciarnia%20%3A%20Galeria%20Kwiatowa!5e0!3m2!1spl!2spl!4v1770017465918!5m2!1spl!2spl"
+                        allowfullscreen=""
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade"
+                        title="Mapa lokalizacji Galerii Kwiatowej u Ani">
+                </iframe>
+            </div>
             <div class="map-info">
-                <iframe src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d2392.6385034922682!2d18.1406655!3d53.152582!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x470317eb46fa01dd%3A0xc21cf1ee16d23b29!2sKwiaciarnia%20%3A%20Galeria%20Kwiatowa!5e0!3m2!1spl!2spl!4v1770017465918!5m2!1spl!2spl" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                <div class="map-address">
+                    <strong>Galeria Kwiatowa u Ani</strong>
+                    <span>ul. Gen. Wiktora Thommée 1, 85-791 Bydgoszcz</span>
+                </div>
+                <a href="https://www.google.com/maps/dir//Kwiaciarnia+:+Galeria+Kwiatowa,+Gen.+Wiktora+Thomm%C3%A9e+1,+85-791+Bydgoszcz"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="btn btn-primary">
+                    Wyznacz trasę →
+                </a>
             </div>
         </div>
     </section>
@@ -191,15 +204,14 @@
 <!-- FOOTER -->
 <footer class="footer">
     <div class="footer-content container">
-        <span class="copyright">© 2025 Galeria Kwiatowa Bydgoszcz. Wszystkie prawa zastrzeżone.</span>
+        <span class="copyright">© 2025 Galeria Kwiatowa u Ani. Wszystkie prawa zastrzeżone.</span>
         <div class="social-links">
-            <a href="https://www.facebook.com/p/Galeria-Kwiatowa-u-Ani-100063565091303/" aria-label="Facebook">Facebook</a>
+            <a href="https://www.facebook.com/p/Galeria-Kwiatowa-u-Ani-100063565091303/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">Facebook</a>
         </div>
     </div>
 </footer>
 
 <!-- SCRIPTS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

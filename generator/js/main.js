@@ -223,12 +223,10 @@ function hasBouquetInUrl() {
 async function preloadModelsWithProgress(typeIndices, onProgress) {
     const typesToLoad = typeIndices
         ? typeIndices.map(i => flowerTypes[i]).filter(Boolean)
-        : flowerTypes; // Załaduj wszystkie jeśli nie ma URL
+        : flowerTypes;
 
     let loaded = 0;
     const total = typesToLoad.length;
-
-    console.log(`📦 Ładowanie ${total} modeli:`, typesToLoad.map(t => t.name).join(', '));
 
     for (const type of typesToLoad) {
         try {
@@ -254,7 +252,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     showLoading('Inicjalizacja...');
 
-    console.log('🌸 Inicjalizacja Kreatora Bukietów');
     const totalStartTime = performance.now();
 
     try {
@@ -263,13 +260,11 @@ window.addEventListener('DOMContentLoaded', async () => {
         await sleep(50);
 
         const { scene, camera, renderer } = initScene('canvas-container');
-        console.log('✓ Scena 3D zainicjalizowana');
         updateProgress(10);
 
         // ETAP 2: Kontrolki kamery (15%)
         updateProgress(12, 'Konfiguracja kamery...');
         setupCameraControls(camera, renderer.domElement);
-        console.log('✓ Kontrolki kamery skonfigurowane');
         updateProgress(15);
 
         // ETAP 3: Analiza URL - które modele potrzebujemy?
