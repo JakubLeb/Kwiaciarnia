@@ -3,121 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kreator Bukietów 3D</title>
+    <title>Galeria Kwiatowa u Ani</title>
 
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Fonty -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Leaflet CSS (mapa) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+    <!-- Własne style -->
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div id="container">
-    <div id="sidebar">
-        <!-- WIDOK GŁÓWNY - dodawanie kwiatów -->
-        <div id="main-view">
-            <h1>Kreator Bukietów</h1>
+<!-- HEADER -->
+<header class="header">
+    <nav class="nav container">
+        <a href="#" class="logo">Galeria Kwiatowa u Ani </a>
+        <ul class="nav-links">
+            <li><a href="#galeria">Galeria</a></li>
+            <li><a href="#uslugi">Usługi</a></li>
+            <li><a href="#kontakt">Kontakt</a></li>
+            <li><a href="#lokalizacja">Lokalizacja</a></li>
+            <li><a href="generator/index.html">Generator bukietów 3D</a></li>
+        </ul>
+        <button class="mobile-menu-btn" aria-label="Menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </nav>
+</header>
 
-            <div class="counter-section">
-                <div class="counter-header">
-                    <h2>Kwiaty w bukiecie</h2>
-                    <span class="counter-badge" id="flower-counter">0 / 27</span>
-                </div>
-                <div class="available-text" id="available-text">Dostępne miejsca: 27</div>
-            </div>
+<!-- MAIN CONTENT -->
+<main class="main container">
 
-            <!-- SEKCJA: Zawartość bukietu -->
-            <div class="section" id="bouquet-contents-section" style="display: none;">
-                <h3>Zawartość bukietu</h3>
-                <div id="bouquet-contents-list"></div>
-            </div>
-
-            <div class="section">
-                <h3>Wybierz kwiat</h3>
-                <div id="flowers-list"></div>
-            </div>
-
-            <div class="section">
-                <button class="action-button btn-remove" id="btn-remove" disabled>
-                    Usuń ostatni kwiat
-                </button>
-                <button class="action-button btn-clear" id="btn-clear" disabled>
-                    Wyczyść bukiet
-                </button>
-                <button class="action-button btn-qr" id="btn-qr">
-                    📱 Generuj kod QR
-                </button>
-            </div>
+    <!-- HERO SECTION -->
+    <section class="hero">
+        <div class="hero-text">
+            <h1>Kwiaty na każdą okazję</h1>
         </div>
+        <div class="hero-image-wrapper">
+            <img src="img/main_img.jpg" alt="główne zdjęce"
+                 alt="Bukiet kwiatów"
+                 class="hero-image">
+        </div>
+    </section>
 
-        <!-- WIDOK EDYTORA - pojawia się w miejsce głównego -->
-        <div id="flower-editor" style="display: none;">
-            <div class="editor-header">
-                <h2>Edytor kwiatu</h2>
-                <button id="close-editor" class="close-btn">✕</button>
+    <!-- INFO CARDS SECTION -->
+    <section class="info-section" id="kontakt">
+        <h2 class="section-title">Informacje</h2>
+        <div class="info-grid">
+
+            <!-- Godziny otwarcia -->
+            <div class="info-card">
+                <h3>Godziny otwarcia</h3>
+                <div class="hours-table">
+                    <div class="hours-row">
+                        <span class="day">Poniedziałek – Piątek</span>
+                        <span class="time">8:00 – 17:00</span>
+                    </div>
+                    <div class="hours-row">
+                        <span class="day">Sobota</span>
+                        <span class="time">9:00 – 14:00</span>
+                    </div>
+                    <div class="hours-row">
+                        <span class="day">Niedziela</span>
+                        <span class="time">ZAMKNIĘTE</span>
+                    </div>
+                </div>
             </div>
 
-            <div class="editor-content">
-                <!-- Przycisk usuwania -->
-                <div class="editor-section">
-                    <button id="delete-flower" class="delete-flower-btn">
-                        🗑️ Usuń kwiat
-                    </button>
-                </div>
-
-                <!-- Przyciski trybu edycji -->
-                <div class="editor-section">
-                    <h3>Narzędzia transformacji</h3>
-                    <p class="editor-hint">Wybierz narzędzie, a przy kwiecie pojawią się kontrolki</p>
-                    <div class="edit-mode-buttons">
-                        <button id="btn-edit-position" class="edit-mode-btn" title="Przesuń kwiat">
-                            <span class="edit-mode-icon">↔️</span>
-                            <span class="edit-mode-label">Pozycja</span>
-                        </button>
-                        <button id="btn-edit-rotation" class="edit-mode-btn" title="Obróć kwiat">
-                            <span class="edit-mode-icon">🔄</span>
-                            <span class="edit-mode-label">Obrót</span>
-                        </button>
-                        <button id="btn-edit-scale" class="edit-mode-btn" title="Skaluj kwiat">
-                            <span class="edit-mode-icon">⤢</span>
-                            <span class="edit-mode-label">Skala</span>
-                        </button>
+            <!-- Kontakt -->
+            <div class="info-card">
+                <h3>Kontakt</h3>
+                <div class="contact-list">
+                    <div class="contact-item">
+                        <span class="contact-icon">📞</span>
+                        <a href="tel:+481661072919">+48 661 072 919</a>
                     </div>
-                    <div class="axis-legend">
-                        <span class="axis-item axis-x">X</span>
-                        <span class="axis-item axis-y">Y</span>
-                        <span class="axis-item axis-z">Z</span>
+                    <div class="contact-item">
+                        <span class="contact-icon">📍</span>
+                        <address>ul. Gen. Wiktora Thommée 1<br>85-791 Bydgoszcz</address>
                     </div>
                 </div>
-
-                <!-- Lista kwiatów do zamiany -->
-                <div class="editor-section">
-                    <h3>Zamień na:</h3>
-                    <div id="flower-replace-list"></div>
+            </div>
+            <!-- Social Media -->
+            <div class="info-card">
+                <h3>Social Media</h3>
+                <div class="contact-list">
+                    <div class="contact-item">
+                        <span class="contact-icon">📘</span>
+                        <a href="https://www.facebook.com/p/Galeria-Kwiatowa-u-Ani-100063565091303/" target="_blank">Facebook</a>
+                    </div>
                 </div>
             </div>
         </div>
+    </section>
+    <!-- GENERATOR CTA SECTION -->
+    <section class="generator-cta">
+        <div class="generator-content">
+            <h2>Kreator bukietów 3D</h2>
+            <p>Stwórz własny bukiet w 3D i zanieś do kwiaciarni by twój wymarzony bukiet pojawił się w realu jeszcze lepszy.</p>
+        </div>
+        <a href="generator/index.html" class="btn btn-primary">Uruchom kreator →</a>
+    </section>
+
+    <!-- GALLERY SECTION -->
+    <section class="gallery-section" id="galeria">
+        <h2 class="section-title">Galeria</h2>
+        <div class="gallery-grid">
+            <div class="gallery-item">
+                <img src="https://images.unsplash.com/photo-1561181286-d3fee7d55364?w=400&h=400&fit=crop" alt="Bukiet róż">
+            </div>
+            <div class="gallery-item">
+                <img src="https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=400&h=400&fit=crop" alt="Tulipany">
+            </div>
+            <div class="gallery-item">
+                <img src="https://images.unsplash.com/photo-1518882605207-83d532a28b48?w=400&h=400&fit=crop" alt="Bukiet ślubny">
+            </div>
+            <div class="gallery-item">
+                <img src="https://images.unsplash.com/photo-1455659817273-f96807779a8a?w=400&h=400&fit=crop" alt="Lilie">
+            </div>
+            <div class="gallery-item">
+                <img src="https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400&h=400&fit=crop" alt="Kwiaty polne">
+            </div>
+            <div class="gallery-item">
+                <img src="https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=400&h=400&fit=crop" alt="Piwonie">
+            </div>
+            <div class="gallery-item">
+                <img src="https://images.unsplash.com/photo-1526047932273-341f2a7631f9?w=400&h=400&fit=crop" alt="Bukiet mieszany">
+            </div>
+            <div class="gallery-item">
+                <img src="https://images.unsplash.com/photo-1522057384400-681b421cfebc?w=400&h=400&fit=crop" alt="Słoneczniki">
+            </div>
+        </div>
+    </section>
+
+    <!-- SERVICES SECTION -->
+    <section class="services-section" id="uslugi">
+        <h2 class="section-title">Usługi</h2>
+        <div class="services-grid">
+            <article class="service-card">
+                <span class="service-icon">💒</span>
+                <div class="service-content">
+                    <h3>Śluby i wesela</h3>
+                    <p>Bukiety ślubne, butonierki, dekoracje kościoła i sali weselnej.</p>
+                </div>
+            </article>
+            <article class="service-card">
+                <span class="service-icon">🎂</span>
+                <div class="service-content">
+                    <h3>Bukiety okolicznościowe</h3>
+                    <p>Urodziny, imieniny, Dzień Matki, walentynki i inne okazje.</p>
+                </div>
+            </article>
+            <article class="service-card">
+                <span class="service-icon">🏢</span>
+                <div class="service-content">
+                    <h3>Obsługa firm</h3>
+                    <p>Stała współpraca, dekoracje biur, kwiaty na eventy firmowe.</p>
+                </div>
+            </article>
+            <article class="service-card">
+                <span class="service-icon">🪴</span>
+                <div class="service-content">
+                    <h3>Rośliny doniczkowe</h3>
+                    <p>Szeroki wybór roślin zielonych i kwitnących do domu i biura.</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+
+    <!-- MAP SECTION -->
+    <section class="map-section" id="lokalizacja">
+        <h2 class="section-title">Lokalizacja</h2>
+        <div class="map-wrapper">
+            <div class="map-info">
+                <iframe src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d2392.6385034922682!2d18.1406655!3d53.152582!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x470317eb46fa01dd%3A0xc21cf1ee16d23b29!2sKwiaciarnia%20%3A%20Galeria%20Kwiatowa!5e0!3m2!1spl!2spl!4v1770017465918!5m2!1spl!2spl" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div class="footer-content container">
+        <span class="copyright">© 2025 Galeria Kwiatowa Bydgoszcz. Wszystkie prawa zastrzeżone.</span>
+        <div class="social-links">
+            <a href="https://www.facebook.com/p/Galeria-Kwiatowa-u-Ani-100063565091303/" aria-label="Facebook">Facebook</a>
+        </div>
     </div>
+</footer>
 
-    <div id="canvas-container"></div>
-
-    <div class="controls-overlay">
-        <p class="controls-title">Sterowanie 3D</p>
-        <p class="control-item">Kliknij i przeciągnij 🖱️: Obrót kamery</p>
-        <p class="control-item">Scroll (kółko) 🔍 : Zoom (oddal/przybliż)</p>
-        <p class="control-item">Kliknij kwiat 🌸: Edytuj kwiat</p>
-    </div>
-</div>
-
-<div id="qr-modal" class="modal-overlay">
-    <div class="modal-content">
-        <h3>Twój Bukiet 💐</h3>
-        <div id="qr-code-container"></div>
-        <p id="qr-text-summary" style="margin-top: 15px; font-size: 14px;"></p>
-        <button id="close-qr" class="action-button" style="margin-top: 20px; background: #6b7280; color: white;">Zamknij</button>
-    </div>
-</div>
-
-<script type="module" src="js/main.js"></script>
-
+<!-- SCRIPTS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>
