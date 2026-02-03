@@ -27,7 +27,6 @@
                     <h2>Kwiaty w bukiecie</h2>
                     <span class="counter-badge" id="flower-counter">0 / 27</span>
                 </div>
-                <div class="available-text" id="available-text">Dostępne miejsca: 27</div>
             </div>
 
             <!-- SEKCJA: Zawartość bukietu - ZAWSZE WIDOCZNA -->
@@ -123,7 +122,13 @@
         <h3>Twój Bukiet 💐</h3>
         <div id="qr-code-container"></div>
         <p id="qr-text-summary" style="margin-top: 15px; font-size: 14px;"></p>
-        <button id="close-qr" class="action-button" style="margin-top: 20px; background: #6b7280; color: white;">Zamknij</button>
+        <div class="qr-info-box">
+            <p>📱 <strong>Zapisz ten kod QR</strong> i pokaż go w kwiaciarni - by stworzyć twój wymarzony bukiet na żywo!</p>
+        </div>
+        <div class="qr-buttons">
+            <button id="download-qr" class="action-button btn-download">📥 Pobierz kod QR</button>
+            <button id="close-qr" class="action-button" style="background: #6b7280; color: white;">Zamknij</button>
+        </div>
     </div>
 </div>
 

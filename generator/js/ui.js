@@ -95,6 +95,7 @@ function createFlowersList() {
         btnAddOne.textContent = '➕';
         btnAddOne.addEventListener('click', async () => {
             btnAddOne.disabled = true;
+
             const result = await addFlower(flower, scene);
 
             if (!result) {
@@ -111,7 +112,9 @@ function createFlowersList() {
         btnAddBouquet.textContent = '💐';
         btnAddBouquet.addEventListener('click', async () => {
             btnAddBouquet.disabled = true;
+
             await generateFullBouquet(flower, scene);
+
             updateUI();
             if (onFlowerChangeCallback) onFlowerChangeCallback();
         });
@@ -319,6 +322,7 @@ export function initFlowerEditor() {
             const selectedFlower = getSelectedFlower();
             if (selectedFlower) {
                 const newFlower = await replaceFlower(selectedFlower, flower, scene);
+
                 if (newFlower) {
                     updateSelectionAfterReplace(newFlower);
                 }
@@ -390,10 +394,8 @@ function setupActionButtons() {
             });
 
             textSummary.innerHTML = `
-                <strong>Zeskanuj, aby otworzyć ten bukiet.</strong><br><br>
-                <small style="word-break: break-all; color: #666;">
-                    <a href="${url}" target="_blank" style="color: #7c3aed;">Otwórz link</a>
-                </small>
+                <strong>Zeskanuj lub pobierz kod QR</strong><br>
+                <small style="color: #666;">Możesz też <a href="${url}" target="_blank" style="color: #7c3aed;">otworzyć link</a></small>
             `;
 
             modal.style.display = 'flex';
@@ -419,6 +421,28 @@ function setupActionButtons() {
             `;
 
             modal.style.display = 'flex';
+        }
+    });
+
+    // Przycisk pobierania QR
+    document.getElementById('download-qr').addEventListener('click', () => {
+        const qrContainer = document.getElementById('qr-code-container');
+        const qrImage = qrContainer.querySelector('img');
+
+        if (qrImage) {
+            const link = document.createElement('a');
+            link.download = 'moj-bukiet-qr.png';
+            link.href = qrImage.src;
+            link.click();
+        } else {
+            // Fallback dla canvas
+            const qrCanvas = qrContainer.querySelector('canvas');
+            if (qrCanvas) {
+                const link = document.createElement('a');
+                link.download = 'moj-bukiet-qr.png';
+                link.href = qrCanvas.toDataURL('image/png');
+                link.click();
+            }
         }
     });
 
@@ -501,9 +525,8 @@ export function updateUI() {
 
     if (btnQr) btnQr.disabled = flowerCount === 0;
 
-    // Pokaż aktualną liczbę i szacowaną pojemność
+    // Pokaż aktualną liczbę kwiatów
     document.getElementById('flower-counter').textContent = `${flowerCount} / ~${maxPositions}`;
-    document.getElementById('available-text').textContent = `Szacowane wolne miejsca: ~${availableCount}`;
 
     document.getElementById('btn-remove').disabled = flowerCount === 0;
     document.getElementById('btn-clear').disabled = flowerCount === 0;
