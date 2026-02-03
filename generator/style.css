@@ -514,7 +514,7 @@ h1 {
 }
 
 /* ============================================ */
-/* ZAWARTOŚĆ BUKIETU - STAŁA WYSOKOŚĆ ZE SCROLL */
+/* ZAWARTOŚĆ BUKIETU - STAŁA WYSOKOŚĆ          */
 /* ============================================ */
 
 #bouquet-contents-section {
@@ -523,6 +523,9 @@ h1 {
     padding: 16px;
     margin-bottom: 24px;
     border: 1px solid #bbf7d0;
+    max-height: 160px;
+    display: block;
+    overflow: hidden;
 }
 
 #bouquet-contents-section h3 {
@@ -531,31 +534,45 @@ h1 {
     font-size: 15px;
 }
 
+/* Wrapper dla listy i komunikatu */
+.bouquet-contents-wrapper {
+    max-height: 95px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
 #bouquet-contents-list {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: 150px;
-    overflow-y: auto;
-    padding-right: 4px;
+}
+
+/* Komunikat o pustym bukiecie */
+.empty-bouquet-message {
+    color: #6b7280;
+    font-size: 13px;
+    text-align: center;
+    padding: 12px 8px;
+    font-style: italic;
+    margin: 0;
 }
 
 /* Stylowanie scrollbara dla listy zawartości */
-#bouquet-contents-list::-webkit-scrollbar {
+.bouquet-contents-wrapper::-webkit-scrollbar {
     width: 6px;
 }
 
-#bouquet-contents-list::-webkit-scrollbar-track {
-    background: #e5e7eb;
+.bouquet-contents-wrapper::-webkit-scrollbar-track {
+    background: #d1fae5;
     border-radius: 3px;
 }
 
-#bouquet-contents-list::-webkit-scrollbar-thumb {
+.bouquet-contents-wrapper::-webkit-scrollbar-thumb {
     background: #22c55e;
     border-radius: 3px;
 }
 
-#bouquet-contents-list::-webkit-scrollbar-thumb:hover {
+.bouquet-contents-wrapper::-webkit-scrollbar-thumb:hover {
     background: #16a34a;
 }
 
@@ -611,6 +628,14 @@ h1 {
         top: 16px;
         right: 16px;
         padding: 10px 12px;
+    }
+
+    #bouquet-contents-section {
+        max-height: 150px;
+    }
+
+    .bouquet-contents-wrapper {
+        max-height: 90px;
     }
 }
 
@@ -676,6 +701,45 @@ h1 {
     .section h3 {
         font-size: 14px;
         margin-bottom: 8px;
+    }
+
+    /* Zawartość bukietu na mobile */
+    #bouquet-contents-section {
+        padding: 12px;
+        margin-bottom: 16px;
+        max-height: 140px;
+    }
+
+    .bouquet-contents-wrapper {
+        max-height: 80px;
+    }
+
+    #bouquet-contents-list {
+        gap: 6px;
+    }
+
+    .bouquet-content-item {
+        padding: 6px 10px;
+        gap: 6px;
+    }
+
+    .bouquet-content-color {
+        width: 20px;
+        height: 20px;
+    }
+
+    .bouquet-content-name {
+        font-size: 12px;
+    }
+
+    .bouquet-content-count {
+        font-size: 12px;
+        padding: 1px 6px;
+    }
+
+    .empty-bouquet-message {
+        font-size: 12px;
+        padding: 8px;
     }
 
     /* Lista kwiatów - kompaktowy widok */
@@ -829,38 +893,6 @@ h1 {
         max-width: 200px;
         height: auto;
     }
-
-    /* Zawartość bukietu na mobile */
-    #bouquet-contents-section {
-        padding: 12px;
-        margin-bottom: 16px;
-    }
-
-    #bouquet-contents-list {
-        max-height: 120px;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-
-    .bouquet-content-item {
-        padding: 6px 10px;
-        gap: 6px;
-    }
-
-    .bouquet-content-color {
-        width: 20px;
-        height: 20px;
-    }
-
-    .bouquet-content-name {
-        font-size: 12px;
-    }
-
-    .bouquet-content-count {
-        font-size: 12px;
-        padding: 1px 6px;
-    }
 }
 
 /* ============================================ */
@@ -883,6 +915,19 @@ h1 {
     .counter-badge {
         padding: 3px 8px;
         font-size: 12px;
+    }
+
+    #bouquet-contents-section {
+        max-height: 120px;
+        padding: 10px;
+    }
+
+    .bouquet-contents-wrapper {
+        max-height: 70px;
+    }
+
+    .empty-bouquet-message {
+        font-size: 11px;
     }
 
     #flowers-list {
@@ -934,10 +979,6 @@ h1 {
     .edit-mode-label {
         font-size: 9px;
     }
-
-    #bouquet-contents-list {
-        max-height: 100px;
-    }
 }
 
 /* ============================================ */
@@ -960,6 +1001,14 @@ h1 {
         order: 2;
         width: 50%;
         height: 100vh;
+    }
+
+    #bouquet-contents-section {
+        max-height: 120px;
+    }
+
+    .bouquet-contents-wrapper {
+        max-height: 70px;
     }
 
     #flowers-list {
@@ -1006,10 +1055,6 @@ h1 {
 
     .editor-flower-button span {
         font-size: 12px;
-    }
-
-    #bouquet-contents-list {
-        max-height: 100px;
     }
 }
 

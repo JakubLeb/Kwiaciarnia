@@ -1,7 +1,7 @@
 // ============================================
 // GŁÓWNY PLIK APLIKACJI
 // Z nowym systemem space-aware placement
-// ZOPTYMALIZOWANY - ładuje TYLKO potrzebne modele
+// ZOPTYMALIZOWANY - ładuje modele tylko gdy potrzebne
 // ============================================
 
 import { flowerTypes } from './config.js';
@@ -278,19 +278,25 @@ window.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        // ETAP 4: Preładowanie TYLKO potrzebnych modeli (15% -> 60%)
-        updateProgress(20, 'Ładowanie modeli kwiatów...');
-        console.log('⏳ Preładowanie modeli kwiatów...');
+        // ETAP 4: Preładowanie modeli TYLKO jeśli jest bukiet w URL
+        if (hasUrlBouquet) {
+            updateProgress(20, 'Ładowanie modeli kwiatów...');
+            console.log('⏳ Preładowanie modeli kwiatów...');
 
-        const preloadStart = performance.now();
-        const modelsCount = await preloadModelsWithProgress(flowerTypeIndices, (progress, name) => {
-            const totalProgress = 20 + (progress * 40);
-            updateProgress(totalProgress, `Ładowanie: ${name}...`);
-        });
+            const preloadStart = performance.now();
+            const modelsCount = await preloadModelsWithProgress(flowerTypeIndices, (progress, name) => {
+                const totalProgress = 20 + (progress * 40);
+                updateProgress(totalProgress, `Ładowanie: ${name}...`);
+            });
 
-        const preloadTime = performance.now() - preloadStart;
-        console.log(`📊 Załadowano ${modelsCount} modeli w ${preloadTime.toFixed(0)}ms`);
-        updateProgress(60);
+            const preloadTime = performance.now() - preloadStart;
+            console.log(`📊 Załadowano ${modelsCount} modeli w ${preloadTime.toFixed(0)}ms`);
+            updateProgress(60);
+        } else {
+            // Brak bukietu w URL - pomijamy preload
+            console.log('📦 Brak bukietu w URL - modele będą ładowane na żądanie');
+            updateProgress(60);
+        }
 
         // ETAP 5: System kwiatów (65%)
         updateProgress(62, 'Inicjalizacja systemu...');
@@ -351,7 +357,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         const totalTime = performance.now() - totalStartTime;
         console.log(`✅ Aplikacja gotowa w ${totalTime.toFixed(0)}ms!`);
 
-        // Doładuj pozostałe modele w tle (dla edytora)
+        // Doładuj pozostałe modele w tle (dla edytora) - tylko jeśli był bukiet
         if (hasUrlBouquet && flowerTypeIndices && flowerTypeIndices.length < flowerTypes.length) {
             console.log('🔄 Doładowuję pozostałe modele w tle...');
             setTimeout(async () => {
@@ -365,7 +371,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             }, 1000);
         }
 
-        await sleep(500);
+        await sleep(300);
 
     } catch (error) {
         console.error('❌ Błąd podczas inicjalizacji:', error);

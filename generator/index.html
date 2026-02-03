@@ -30,10 +30,15 @@
                 <div class="available-text" id="available-text">Dostępne miejsca: 27</div>
             </div>
 
-            <!-- SEKCJA: Zawartość bukietu -->
-            <div class="section" id="bouquet-contents-section" style="display: none;">
+            <!-- SEKCJA: Zawartość bukietu - ZAWSZE WIDOCZNA -->
+            <div class="section" id="bouquet-contents-section">
                 <h3>Zawartość bukietu</h3>
-                <div id="bouquet-contents-list"></div>
+                <div class="bouquet-contents-wrapper">
+                    <div id="bouquet-contents-list"></div>
+                    <p id="bouquet-empty-message" class="empty-bouquet-message">
+                        Bukiet jest pusty. Dodaj kwiaty klikając ➕ lub 💐
+                    </p>
+                </div>
             </div>
 
             <div class="section">

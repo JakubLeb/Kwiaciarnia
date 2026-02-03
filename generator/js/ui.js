@@ -439,6 +439,7 @@ function setupActionButtons() {
 function updateBouquetContentsList() {
     const section = document.getElementById('bouquet-contents-section');
     const list = document.getElementById('bouquet-contents-list');
+    const emptyMessage = document.getElementById('bouquet-empty-message');
 
     // Sprawdź czy elementy istnieją
     if (!section || !list) {
@@ -447,13 +448,24 @@ function updateBouquetContentsList() {
 
     const contents = getBouquetContents();
 
+    // Sekcja zawsze widoczna
+    section.style.display = 'block';
+
+    // Wyczyść listę
+    list.innerHTML = '';
+
     if (contents.length === 0) {
-        section.style.display = 'none';
+        // Pokaż komunikat o pustym bukiecie
+        if (emptyMessage) {
+            emptyMessage.style.display = 'block';
+        }
         return;
     }
 
-    section.style.display = 'block';
-    list.innerHTML = '';
+    // Ukryj komunikat o pustym bukiecie
+    if (emptyMessage) {
+        emptyMessage.style.display = 'none';
+    }
 
     contents.forEach(item => {
         const itemEl = document.createElement('div');
