@@ -58,7 +58,7 @@ function initSmoothScroll() {
  * Lazy loading dla obrazków w galerii
  */
 function initLazyLoading() {
-    const images = document.querySelectorAll('.gallery-item images');
+    const images = document.querySelectorAll('.gallery-item img');
 
     if ('IntersectionObserver' in window) {
         const imageObserver = new IntersectionObserver((entries, observer) => {
@@ -85,12 +85,176 @@ function initLazyLoading() {
 }
 
 /**
+ * Lightbox Gallery - powiększanie zdjęć
+ */
+function initLightbox() {
+    const galleryItems = document.querySelectorAll('.gallery-item');
+
+    if (galleryItems.length === 0) return;
+
+    // Tworzenie struktury lightbox
+    const lightbox = document.createElement('div');
+    lightbox.className = 'lightbox-overlay';
+    lightbox.innerHTML = `
+        <div class="lightbox-content">
+            <button class="lightbox-close" aria-label="Zamknij">✕</button>
+            <button class="lightbox-nav prev" aria-label="Poprzednie zdjęcie">‹</button>
+            <img class="lightbox-image" src="" alt="Powiększone zdjęcie">
+            <button class="lightbox-nav next" aria-label="Następne zdjęcie">›</button>
+            <div class="lightbox-counter"></div>
+        </div>
+    `;
+    document.body.appendChild(lightbox);
+
+    const lightboxImage = lightbox.querySelector('.lightbox-image');
+    const lightboxClose = lightbox.querySelector('.lightbox-close');
+    const lightboxPrev = lightbox.querySelector('.lightbox-nav.prev');
+    const lightboxNext = lightbox.querySelector('.lightbox-nav.next');
+    const lightboxCounter = lightbox.querySelector('.lightbox-counter');
+    const lightboxContent = lightbox.querySelector('.lightbox-content');
+
+    let currentIndex = 0;
+    const images = Array.from(galleryItems).map(item => {
+        const img = item.querySelector('img');
+        return {
+            src: img.src.replace('w=400&h=400', 'w=1200&h=1200'), // Większa wersja
+            alt: img.alt
+        };
+    });
+
+    /**
+     * Otwiera lightbox z określonym zdjęciem
+     */
+    function openLightbox(index) {
+        currentIndex = index;
+        updateLightboxImage();
+        lightbox.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    /**
+     * Zamyka lightbox
+     */
+    function closeLightbox() {
+        lightbox.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    /**
+     * Aktualizuje zdjęcie w lightbox
+     */
+    function updateLightboxImage() {
+        const image = images[currentIndex];
+        lightboxImage.src = image.src;
+        lightboxImage.alt = image.alt;
+        lightboxCounter.textContent = `${currentIndex + 1} / ${images.length}`;
+
+        // Ukryj/pokaż strzałki nawigacji
+        lightboxPrev.style.display = images.length > 1 ? 'block' : 'none';
+        lightboxNext.style.display = images.length > 1 ? 'block' : 'none';
+    }
+
+    /**
+     * Przejście do następnego zdjęcia
+     */
+    function nextImage() {
+        currentIndex = (currentIndex + 1) % images.length;
+        updateLightboxImage();
+    }
+
+    /**
+     * Przejście do poprzedniego zdjęcia
+     */
+    function prevImage() {
+        currentIndex = (currentIndex - 1 + images.length) % images.length;
+        updateLightboxImage();
+    }
+
+    // Event listeners dla elementów galerii
+    galleryItems.forEach((item, index) => {
+        item.addEventListener('click', () => openLightbox(index));
+    });
+
+    // Event listeners dla lightbox
+    lightboxClose.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeLightbox();
+    });
+
+    lightboxPrev.addEventListener('click', (e) => {
+        e.stopPropagation();
+        prevImage();
+    });
+
+    lightboxNext.addEventListener('click', (e) => {
+        e.stopPropagation();
+        nextImage();
+    });
+
+    // Zamknięcie po kliknięciu w tło
+    lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) {
+            closeLightbox();
+        }
+    });
+
+    // Zapobiegaj zamknięciu przy kliknięciu w content
+    lightboxContent.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+
+    // Obsługa klawiatury
+    document.addEventListener('keydown', (e) => {
+        if (!lightbox.classList.contains('active')) return;
+
+        switch (e.key) {
+            case 'Escape':
+                closeLightbox();
+                break;
+            case 'ArrowLeft':
+                prevImage();
+                break;
+            case 'ArrowRight':
+                nextImage();
+                break;
+        }
+    });
+
+    // Obsługa swipe na urządzeniach dotykowych
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    lightbox.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    lightbox.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    }, { passive: true });
+
+    function handleSwipe() {
+        const swipeThreshold = 50;
+        const diff = touchStartX - touchEndX;
+
+        if (Math.abs(diff) > swipeThreshold) {
+            if (diff > 0) {
+                nextImage();
+            } else {
+                prevImage();
+            }
+        }
+    }
+}
+
+/**
  * Inicjalizacja wszystkich funkcji
  */
 function init() {
     initMobileMenu();
     initSmoothScroll();
     initLazyLoading();
+    initLightbox();
 }
 
 // Uruchom po załadowaniu DOM

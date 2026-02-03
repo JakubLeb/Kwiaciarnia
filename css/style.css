@@ -367,7 +367,7 @@ p {
 }
 
 /* --------------------------------------------
-   GALLERY - 28 zdjęć (7 rzędów po 4)
+   GALLERY
    -------------------------------------------- */
 .gallery-grid {
     display: grid;
@@ -379,6 +379,7 @@ p {
     aspect-ratio: 1;
     overflow: hidden;
     border-radius: var(--radius-md);
+    cursor: pointer;
 }
 
 .gallery-item img {
@@ -390,6 +391,116 @@ p {
 
 .gallery-item:hover img {
     transform: scale(1.05);
+}
+
+/* --------------------------------------------
+   LIGHTBOX GALLERY
+   -------------------------------------------- */
+.lightbox-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.92);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+}
+
+.lightbox-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.lightbox-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    transform: scale(0.7) translateY(30px);
+    opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+    cursor: default;
+}
+
+.lightbox-overlay.active .lightbox-content {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+.lightbox-image {
+    max-width: 90vw;
+    max-height: 85vh;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6);
+}
+
+.lightbox-close {
+    position: absolute;
+    top: -50px;
+    right: -10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: var(--color-white);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem 0.75rem;
+    line-height: 1;
+    border-radius: 50%;
+    transition: transform var(--transition-fast), background var(--transition-fast);
+    opacity: 0.9;
+}
+
+.lightbox-close:hover {
+    transform: scale(1.1) rotate(90deg);
+    background: rgba(255, 255, 255, 0.2);
+    opacity: 1;
+}
+
+.lightbox-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: var(--color-white);
+    font-size: 1.75rem;
+    cursor: pointer;
+    padding: 1rem 0.875rem;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast), transform var(--transition-fast);
+    opacity: 0.8;
+}
+
+.lightbox-nav:hover {
+    background: rgba(255, 255, 255, 0.25);
+    opacity: 1;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.lightbox-nav.prev {
+    left: -70px;
+}
+
+.lightbox-nav.next {
+    right: -70px;
+}
+
+.lightbox-counter {
+    position: absolute;
+    bottom: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    font-weight: 500;
 }
 
 /* --------------------------------------------
@@ -550,9 +661,8 @@ p {
         grid-template-columns: 1fr;
     }
 
-    /* Galeria 3 kolumny na tablecie */
     .gallery-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .services-grid {
@@ -576,6 +686,20 @@ p {
 
     .map-address {
         align-items: center;
+    }
+
+    /* Lightbox na tablet */
+    .lightbox-nav.prev {
+        left: 10px;
+    }
+
+    .lightbox-nav.next {
+        right: 10px;
+    }
+
+    .lightbox-close {
+        top: -45px;
+        right: 0;
     }
 }
 
@@ -650,9 +774,43 @@ p {
         text-align: center;
     }
 
-    /* Galeria 2 kolumny na mobile */
     .gallery-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: var(--spacing-xs);
+    }
+
+    /* Lightbox na mobile */
+    .lightbox-content {
+        max-width: 95vw;
+    }
+
+    .lightbox-image {
+        max-width: 95vw;
+        max-height: 80vh;
+    }
+
+    .lightbox-nav {
+        padding: 0.75rem 0.5rem;
+        font-size: 1.25rem;
+    }
+
+    .lightbox-nav.prev {
+        left: 5px;
+    }
+
+    .lightbox-nav.next {
+        right: 5px;
+    }
+
+    .lightbox-close {
+        top: -40px;
+        right: 5px;
+        font-size: 1.25rem;
+        padding: 0.4rem 0.6rem;
+    }
+
+    .lightbox-counter {
+        bottom: -35px;
+        font-size: 0.8rem;
     }
 }
