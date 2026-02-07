@@ -40,7 +40,6 @@ export function initScene(containerId) {
     // Obsługa resize
     window.addEventListener('resize', () => onWindowResize(container));
 
-
     return { scene, camera, renderer };
 }
 

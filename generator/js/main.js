@@ -4,6 +4,35 @@
 // ZOPTYMALIZOWANY - ładuje modele tylko gdy potrzebne
 // ============================================
 
+const brand = "JakubL";
+const github = "https://github.com/JakubLeb";
+
+console.log(
+    `%c🚀 Strona wykonana przez ${brand}`,
+    `
+  background: linear-gradient(90deg, #111, #1f1f1f);
+  color: #bada55;
+  font-size: 16px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  `
+);
+
+console.log(
+    `%c💻 GitHub: ${github}`,
+    `
+  background: #24292e;
+  color: #ffffff;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  font-family: monospace;
+  font-size: 13px;
+  `
+);
+
 import { flowerTypes } from './config.js';
 import { initScene, startAnimation } from './scene.js';
 import { setupCameraControls } from './camera.js';

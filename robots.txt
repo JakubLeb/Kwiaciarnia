@@ -1,0 +1,15 @@
+# Robots.txt dla Galeria Kwiatowa u Ani
+# https://www.robotstxt.org/
+
+User-agent: *
+Allow: /
+
+# Blokuj dostęp do plików technicznych
+Disallow: /generator/js/
+Disallow: /js/
+
+# Zezwól na indeksowanie głównych stron
+Allow: /index.html
+Allow: /generator/index.html
+
+Sitemap: https://galeriakwiatowauani.pl/sitemap.xml

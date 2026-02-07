@@ -1,9 +1,37 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
+    <!-- Google Tag Manager -->
+    <!--
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-WQSGCJX4');</script>
+    -->
+    <!-- End Google Tag Manager -->
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Galeria Kwiatowa u Ani</title>
+    <meta name="description" content="Szukasz kwiaciarni w Bydgoszczy? Galeria Kwiatowa u Ani oferuje wyjątkowe bukiety ślubne, wieńce i kwiaty na każdą okazję. Odwiedź nas przy ul. Thommée 1!">
+    <title>Kwiaciarnia Bydgoszcz Fordon | Galeria Kwiatowa u Ani </title>
+
+    <link rel="canonical" href="https://www.galeriakwiatowauani.pl/" />
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.galeriakwiatowauani.pl/">
+    <meta property="og:title" content="Kwiaciarnia Bydgoszcz Fordon | Galeria Kwiatowa u Ani">
+    <meta property="og:description" content="Szukasz kwiaciarni w Bydgoszczy? Galeria Kwiatowa u Ani oferuje wyjątkowe bukiety ślubne, wieńce i kwiaty na każdą okazję. Odwiedź nas przy ul. Thommée 1!">
+    <meta property="og:image" content="https://www.galeriakwiatowauani.pl/images/main_img.webp">
+    <meta property="og:locale" content="pl_PL">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://www.galeriakwiatowauani.pl/">
+    <meta name="twitter:title" content="Galeria Kwiatowa u Ani - Kwiaciarnia Bydgoszcz">
+    <meta name="twitter:description" content="Wyjątkowe bukiety i kwiaty w Bydgoszczy. Sprawdź naszą ofertę!">
+    <meta name="twitter:image" content="https://www.galeriakwiatowauani.pl/images/main_img.webp">
+
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Florist","name":"Galeria Kwiatowa u Ani","image":"https://www.galeriakwiatowauani.pl/images/main_img.webp","url":"https://www.galeriakwiatowauani.pl/","telephone":"+48661072919","priceRange":"$$","address":{"@type":"PostalAddress","streetAddress":"ul. Gen. Wiktora Thommée 1","addressLocality":"Bydgoszcz","postalCode":"85-791","addressCountry":"PL"},"geo":{"@type":"GeoCoordinates","latitude":53.1538,"longitude":18.1473},"openingHoursSpecification":[{"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday"],"opens":"08:00","closes":"17:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Saturday","opens":"09:00","closes":"14:00"}]}</script>
 
     <!-- Favicon - używamy względnych ścieżek -->
     <link rel="icon" type="image/png" href="generator/images/favicon-96x96.png" sizes="96x96" />
@@ -15,9 +43,17 @@
     <!-- Fonty -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
 
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Source+Sans+3:wght@300;400;500;600&display=swap"
+          rel="stylesheet"
+          media="print"
+          onload="this.media='all'">
+
+    <noscript>
+        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+    </noscript>
     <!-- Własne style -->
+    <link rel="preload" href="css/style.css" as="style">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -26,9 +62,9 @@
     <nav class="nav container">
         <a href="#" class="logo">Galeria Kwiatowa u Ani</a>
         <ul class="nav-links">
+            <li><a href="#kontakt">Kontakt</a></li>
             <li><a href="#galeria">Galeria</a></li>
             <li><a href="#uslugi">Usługi</a></li>
-            <li><a href="#kontakt">Kontakt</a></li>
             <li><a href="#generator-cta">Generator bukietów 3D</a></li>
             <li><a href="#lokalizacja">Lokalizacja</a></li>
         </ul>
@@ -49,7 +85,7 @@
             <h1>Kwiaty na każdą okazję</h1>
         </div>
         <div class="hero-image-wrapper">
-            <img src="images/main_img.jpg" alt="Bukiet kwiatów" class="hero-image">
+            <img src="images/main_img.webp" fetchpriority=high alt="Bukiet kwiatów" class="hero-image">
         </div>
     </section>
 
@@ -108,96 +144,89 @@
     <section class="gallery-section" id="galeria">
         <h2 class="section-title">Galeria</h2>
         <div class="gallery-grid">
-            <!-- Rząd 1 -->
             <div class="gallery-item">
-                <img src="images/1000058203.jpg" alt="Bukiet na weselu">
+                <img src="images/1000058203.webp" alt="Bukiet na weselu" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000058454.jpg" alt="Kwiaty bukiety">
+                <img src="images/1000058454.webp" alt="Kwiaty bukiety" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000058458.jpg" alt="Bukiet na ślubie">
+                <img src="images/1000058458.webp" alt="Bukiet na ślubie" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000058460.jpg" alt="Kwiat na weselu">
-            </div>
-            <!-- Rząd 2 -->
-            <div class="gallery-item">
-                <img src="images/1000058488.jpg" alt="Kwiaty na samochodzie">
+                <img src="images/1000058460.webp" alt="Kwiat na weselu" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000058489.jpg" alt="Kwiat na drzwiach od samochodu">
+                <img src="images/1000058488.webp" alt="Kwiaty na samochodzie" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000059003.jpg" alt="Kwiaty w wazonie">
+                <img src="images/1000058489.webp" alt="Kwiat na drzwiach od samochodu" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000065983.jpg" alt="Mały bukiet">
-            </div>
-            <!-- Rząd 3 -->
-            <div class="gallery-item">
-                <img src="images/1000065987.jpg" alt="Białe kwiaty">
+                <img src="images/1000059003.webp" alt="Kwiaty w wazonie" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000070739.jpg" alt="Trzy kwiaty na krześle">
+                <img src="images/1000065983.webp" alt="Mały bukiet" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000072097.jpg" alt="Biało niebieskie kwiaty">
+                <img src="images/1000065987.webp" alt="Białe kwiaty" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000073060.jpg" alt="Kwiaty pary młodej">
-            </div>
-            <!-- Rząd 4 -->
-            <div class="gallery-item">
-                <img src="images/1000073063.jpg" alt="Kwiaty na weselu">
+                <img src="images/1000070739.webp" alt="Trzy kwiaty na krześle" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000073066.jpg" alt="Kwiaty pan młody">
+                <img src="images/1000072097.webp" alt="Biało niebieskie kwiaty" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000073069.jpg" alt="Kwiaty na stole wesele">
+                <img src="images/1000073060.webp" alt="Kwiaty pary młodej" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000085623.jpg" alt="Karta A Bukiet">
-            </div>
-            <!-- Rząd 5 -->
-            <div class="gallery-item">
-                <img src="images/1000085679.jpg" alt="Bukiet">
+                <img src="images/1000073063.webp" alt="Kwiaty na weselu" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000085681.jpg" alt="Bukiet">
+                <img src="images/1000073066.webp" alt="Kwiaty pan młody" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000088084.jpg" alt="Serce Bukiet">
+                <img src="images/1000073069.webp" alt="Kwiaty na stole wesele" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000088232.jpg" alt="Różowe kwiaty">
-            </div>
-            <!-- Rząd 6 -->
-            <div class="gallery-item">
-                <img src="images/1000117665.jpg" alt="Bukiet romantyczny">
+                <img src="images/1000085623.webp" alt="Karta A Bukiet" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000127178.jpg" alt="Kwiaty w oknie">
+                <img src="images/1000085679.webp" alt="Bukiet" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000127179.jpg" alt="Kwiaty białe">
+                <img src="images/1000085681.webp" alt="Bukiet" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000127180.jpg" alt="Bukiet">
-            </div>
-            <!-- Rząd 7 -->
-            <div class="gallery-item">
-                <img src="images/1000127181.jpg" alt="Bukiet">
+                <img src="images/1000088084.webp" alt="Serce Bukiet" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000127185.jpg" alt="Bukiet">
+                <img src="images/1000088232.webp" alt="Różowe kwiaty" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000127186.jpg" alt="Kompozycja kwiatowa">
+                <img src="images/1000117665.webp" alt="Bukiet romantyczny" loading="lazy">
             </div>
             <div class="gallery-item">
-                <img src="images/1000127187.jpg" alt="Kwiaty">
+                <img src="images/1000127178.webp" alt="Kwiaty w oknie" loading="lazy">
+            </div>
+            <div class="gallery-item">
+                <img src="images/1000127179.webp" alt="Kwiaty białe" loading="lazy">
+            </div>
+            <div class="gallery-item">
+                <img src="images/1000127180.webp" alt="Bukiet" loading="lazy">
+            </div>
+            <div class="gallery-item">
+                <img src="images/1000127181.webp" alt="Bukiet" loading="lazy">
+            </div>
+            <div class="gallery-item">
+                <img src="images/1000127185.webp" alt="Bukiet" loading="lazy">
+            </div>
+            <div class="gallery-item">
+                <img src="images/1000127186.webp" alt="Kompozycja kwiatowa" loading="lazy">
+            </div>
+            <div class="gallery-item">
+                <img src="images/1000127187.webp" alt="Kwiaty" loading="lazy">
             </div>
         </div>
     </section>
@@ -252,7 +281,10 @@
         <div class="map-wrapper">
             <div class="map-container">
                 <iframe
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2392.6385034922682!2d18.1406655!3d53.152582!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x470317eb46fa01dd%3A0xc21cf1ee16d23b29!2sKwiaciarnia%20%3A%20Galeria%20Kwiatowa!5e0!3m2!1spl!2spl!4v1770017465918!5m2!1spl!2spl"
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d12774.150891192821!2d18.139694487464627!3d53.15596374803325!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x470317eb46fa01dd%3A0xc21cf1ee16d23b29!2sKwiaciarnia%20%3A%20Galeria%20Kwiatowa!5e0!3m2!1spl!2spl!4v1770320092953!5m2!1spl!2spl"
+                        width="100%"
+                        height="450"
+                        style="border:0;"
                         allowfullscreen=""
                         loading="lazy"
                         referrerpolicy="no-referrer-when-downgrade"
@@ -284,8 +316,13 @@
         </div>
     </div>
 </footer>
-
+<!-- Google Tag Manager (noscript) -->
+<!--
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WQSGCJX4"
+                 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+-->
+<!-- End Google Tag Manager (noscript) -->
 <!-- SCRIPTS -->
-<script src="js/main.js"></script>
+<script src="js/main.js" defer></script>
 </body>
 </html>
