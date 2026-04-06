@@ -1,108 +1,109 @@
-# README — Kreator Bukietów 3D
+# README — 3D Bouquet Creator
 
-## Opis projektu
+## About the project
 
-Interaktywny kreator bukietów 3D osadzony w stronie kwiaciarni **Galeria Kwiatowa u Ani** (Bydgoszcz). Użytkownik komponuje bukiet z modeli 3D kwiatów, a gotowy projekt eksportuje jako kod QR do pokazania w kwiaciarni.
+An interactive 3D bouquet creator embedded in the website of **Galeria Kwiatowa u Ani** flower shop (Bydgoszcz, Poland). Users compose a bouquet from 3D flower models and export the result as a QR code to bring into the shop.
 
-Strona dostępna pod: https://www.galeriakwiatowauani.pl/
+Live site: https://www.galeriakwiatowauani.pl/
 
 ---
 
-## Struktura projektu
+## Project structure
 
 ```
 generator/
-├── index.html          # Strona główna
-├── style.css           # Style
+├── index.html          # Creator page
+├── style.css           # Styles
 └── js/
-    ├── main.js         # Inicjalizacja aplikacji + loading screen
-    ├── config.js       # Konfiguracja: typy kwiatów, scena, kamera
-    ├── scene.js        # Scena Three.js, oświetlenie, podłoga
-    ├── camera.js       # Kontrolki kamery (mysz + dotyk)
-    ├── flowers.js      # Zarządzanie kwiatami + kodowanie URL / QR
-    ├── collision.js    # Algorytm do rozstawiania kwiatów
-    ├── modelLoader.js  # Ładowanie i cache modeli GLB
-    ├── Raycaster.js    # Raycast, zaznaczanie, gizmo 3D
-    └── ui.js           # Interfejs użytkownika
+    ├── main.js         # App initialization + loading screen
+    ├── config.js       # Config: flower types, scene, camera
+    ├── scene.js        # Three.js scene, lighting, floor
+    ├── camera.js       # Camera controls (mouse + touch)
+    ├── flowers.js      # Flower management + URL / QR encoding
+    ├── collision.js    # Flower placement algorithm
+    ├── modelLoader.js  # GLB model loading and cache
+    ├── Raycaster.js    # Raycasting, selection, 3D gizmos
+    └── ui.js           # User interface
 ```
 
 ---
 
-## Funkcje
+## Features
 
-### Dodawanie kwiatów
-- **➕** — dodaje jeden kwiat w wolne miejsce (circle packing)
-- **💐** — generuje pełny bukiet z wybranego gatunku
+### Adding flowers
+- **➕** — adds a single flower into a free spot (circle packing)
+- **💐** — fills the bouquet with the selected flower type
 
-### Edytor kwiatu (klik na kwiat)
-- **Pozycja** — strzałki XYZ do przesuwania
-- **Obrót** — pierścienie XYZ do obracania
-- **Skala** — sześciany XYZ do skalowania
-- **Zamiana** — podmiana na inny gatunek
-- **Usunięcie** — usunięcie kwiatu ze sceny
+### Flower editor (click any flower)
+- **Position** — XYZ arrows for moving
+- **Rotation** — XYZ rings for rotating
+- **Scale** — XYZ cubes for scaling
+- **Replace** — swap for a different flower type
+- **Delete** — remove the flower from the scene
 
-### Kod QR / link
-Stan bukietu kodowany jest w URL jako binarny format z opcjonalną kompresją GZIP (biblioteka pako). Kod QR można zapisać i pokazać w kwiaciarni.
+### QR code / shareable link
+The bouquet state is encoded in the URL as a binary format with optional GZIP compression (pako library). The QR code can be saved and shown at the flower shop.
 
 ---
 
-## Dostępne gatunki
+## Available flower types
 
-| Nazwa | Model |
+| Name | Model |
 |---|---|
-| Róża Czerwona | `rose.glb` |
-| Róża Biała | `biala_roza.glb` |
-| Róża Herbaciana | `herbaciana_roza.glb` |
-| Róża Różowa | `rozowa_roza.glb` |
-| Róża Żółta | `zolta_roza.glb` |
-| Róża Fioletowa | `fioletowa_roza.glb` |
-| Tulipan | `tulipan.glb` |
-| Goździk | `gozdzik.glb` |
+| Red Rose | `rose.glb` |
+| White Rose | `biala_roza.glb` |
+| Tea Rose | `herbaciana_roza.glb` |
+| Pink Rose | `rozowa_roza.glb` |
+| Yellow Rose | `zolta_roza.glb` |
+| Purple Rose | `fioletowa_roza.glb` |
+| Tulip | `tulipan.glb` |
+| Carnation | `gozdzik.glb` |
 | Eustoma | `eustoma.glb` |
-| Irys | `Irys.glb` |
+| Iris | `Irys.glb` |
 | Gerbera | `Gerbera.glb` |
-| Chryzantema | `Chryzantema.glb` |
+| Chrysanthemum | `Chryzantema.glb` |
 
-Modele GLB umieszczone w katalogu `generator/models/`.
-
----
-
-## Technologie
-
-- **Three.js r128** — renderowanie 3D
-- **GLTFLoader** — ładowanie modeli GLB (lazy load przez skypack CDN)
-- **pako 2.1** — kompresja GZIP dla URL z dużymi bukietami
-- **qrcodejs** — generowanie kodu QR
+GLB models are stored in the `generator/models/` directory.
 
 ---
 
-## Algorytm rozmieszczania (collision.js)
+## Technologies
 
-Kwiaty rozmieszczane są metodą **circle packing** w kształcie okrągłego bukietu:
-
-1. Centrum — pierwszy kwiat zawsze trafia w środek
-2. Pierścienie koncentryczne — kolejne kwiaty wypełniają kolejne okręgi, offset kąta oparty o złoty podział (φ ≈ 0.618) dla naturalnego wyglądu
-3. Fallback losowy — jeśli pierścienie są pełne, Poisson-like random sampling
-4. Każdy kwiat rejestrowany jest jako okrąg z promieniem wynikającym z bounding box modelu
+- **Three.js r128** — 3D rendering
+- **GLTFLoader** — GLB model loading (lazy-loaded via skypack CDN)
+- **pako 2.1** — GZIP compression for URLs with large bouquets
+- **qrcodejs** — QR code generation
 
 ---
 
-## Format URL (wersja 2)
+## Placement algorithm (collision.js)
 
-Każdy kwiat kodowany jest binarnie:
+Flowers are arranged using **circle packing** to form a round bouquet shape:
+
+1. Center — the first flower always placed at the origin
+2. Concentric rings — subsequent flowers fill outward rings; the angular offset uses the golden ratio (φ ≈ 0.618) for a natural look
+3. Random fallback — if rings are full, Poisson-like random sampling is used
+4. Each flower is registered as a circle whose radius is derived from the model's bounding box
+
+---
+
+## URL format (version 2)
+
+Each flower is binary-encoded as:
 
 ```
 [flags 1B][typeIndex 1B][x 2B][z 2B]
-  + opcjonalnie: [y 2B] [rotX rotY rotZ po 2B] [scaleX scaleY scaleZ po 1B]
+  + optional: [y 2B] [rotX rotY rotZ × 2B each] [scaleX scaleY scaleZ × 1B each]
 ```
 
-Flagi bitowe określają obecność opcjonalnych pól (`bit0` = y, `bit1` = rotacja, `bit2` = skala). Cały bufor kodowany jest w URL-safe base64 (`-` zamiast `+`, `_` zamiast `/`). Przy >10 kwiatach stosowana jest kompresja GZIP (parametr `c=`), poniżej bez kompresji (parametr `b=`).
+Bit flags indicate which optional fields are present (`bit0` = y, `bit1` = rotation, `bit2` = scale). The full buffer is encoded as URL-safe base64 (`-` instead of `+`, `_` instead of `/`). With more than 10 flowers, GZIP compression is applied (parameter `c=`); otherwise uncompressed (parameter `b=`).
 
 ---
 
-## Ładowanie z URL
+## Loading from URL
 
-Aplikacja wykrywa parametry `b=` lub `c=` w URL i:
-1. Parsuje jakie typy kwiatów są potrzebne
-2. Preładuje **tylko te modele** (oszczędność czasu przy dużych bukietach)
-3. Pozostałe modele doładowuje w tle po 1s (dostępne dla edytora)
+The app detects `b=` or `c=` parameters in the URL and:
+
+1. Parses which flower types are needed
+2. Preloads **only those models** (saves time for large bouquets)
+3. Loads remaining models in the background after 1s (available for the editor)
