@@ -4,6 +4,8 @@
 
 Interaktywny kreator bukietów 3D osadzony w stronie kwiaciarni **Galeria Kwiatowa u Ani** (Bydgoszcz). Użytkownik komponuje bukiet z modeli 3D kwiatów, a gotowy projekt eksportuje jako kod QR do pokazania w kwiaciarni.
 
+Strona dostępna pod: https://www.galeriakwiatowauani.pl/
+
 ---
 
 ## Struktura projektu
