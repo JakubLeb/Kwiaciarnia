@@ -4,7 +4,7 @@
 
 An interactive 3D bouquet creator embedded in the website of **Galeria Kwiatowa u Ani** flower shop (Bydgoszcz, Poland). Users compose a bouquet from 3D flower models and export the result as a QR code to bring into the shop.
 
-Live site: https://www.galeriakwiatowauani.pl/
+Live site: https://www.galeriakwiatowauani.pl
 
 ---
 
